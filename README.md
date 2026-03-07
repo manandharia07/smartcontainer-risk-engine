@@ -27,14 +27,14 @@
     - [Step A — Train the Model](#step-a--train-the-model)
     - [Step B — Run Inference on Test Data](#step-b--run-inference-on-test-data)
     - [Step C — Launch the Dashboard](#step-c--launch-the-dashboard)
-11. [Command-Line Reference (predict.py)](#11-command-line-reference-predictpy)
-12. [Docker Deployment](#12-docker-deployment)
-13. [Dashboard — All Sections Explained](#13-dashboard--all-sections-explained)
-14. [Model Evaluation Metrics](#14-model-evaluation-metrics)
-15. [Feature Importance & Explainability](#15-feature-importance--explainability)
-16. [Key Design Decisions](#16-key-design-decisions)
-17. [Troubleshooting](#17-troubleshooting)
-18. [Output File Format](#18-output-file-format)
+11. [Docker Deployment](#11-docker-deployment)
+12. [Dashboard — All Sections Explained](#12-dashboard--all-sections-explained)
+13. [Command-Line Reference (predict.py)](#13-command-line-reference-predictpy)
+15. [Model Evaluation Metrics](#14-model-evaluation-metrics)
+16. [Feature Importance & Explainability](#15-feature-importance--explainability)
+17. [Key Design Decisions](#16-key-design-decisions)
+18. [Troubleshooting](#17-troubleshooting)
+19. [Output File Format](#18-output-file-format)
 
 ---
 
@@ -754,51 +754,7 @@ If it doesn't open automatically, navigate to the URL manually.
 - 8+ analytical sections (see Section 13 for full details)
 
 ---
-
-## 11. Command-Line Reference (`predict.py`)
-
-```bash
-python predict.py [OPTIONS]
-```
-
-| Argument | Type | Default | Description |
-|----------|------|---------|-------------|
-| `--input` | str | **Required** | Path to the input shipment CSV file |
-| `--output` | str | `container_risk_predictions.csv` | Path for the output predictions CSV |
-| `--critical-threshold` | float | `55.0` | Risk score cutoff above which containers are labeled `Critical` |
-| `--low-risk-threshold` | float | `22.0` | Risk score cutoff above which containers are labeled `Low Risk` |
-| `--no-shap` | flag | False | Skip SHAP computation (faster, no explanations) |
-
-### Examples
-
-**Basic prediction:**
-```bash
-python predict.py --input "Test Data.csv"
-```
-
-**Custom output file:**
-```bash
-python predict.py --input "Test Data.csv" --output "my_test_results.csv"
-```
-
-**Adjust thresholds (stricter Critical definition):**
-```bash
-python predict.py --input "Test Data.csv" --critical-threshold 65 --low-risk-threshold 30
-```
-
-**Fast mode (skip SHAP, useful for very large datasets):**
-```bash
-python predict.py --input "Test Data.csv" --no-shap
-```
-
-**Save predictions generated during evaluation to test results file:**
-```bash
-python predict.py --input "Test Data.csv" --output "my_test_results.csv"
-```
-
----
-
-## 12. Docker Deployment
+## 11. Docker Deployment
 
 Docker allows running the entire application in an isolated, reproducible container without any local Python setup.
 
@@ -887,8 +843,7 @@ This means you can **update the CSV files on your host** without rebuilding the 
 **Health check:** Docker Compose also configures a health check that pings `http://localhost:8501/_stcore/health` every 30 seconds to verify the container is alive.
 
 ---
-
-## 13. Dashboard — All Sections Explained
+## 12. Dashboard — All Sections Explained
 
 The dashboard (`dashboard.py`) is a 1462-line Streamlit application with a GitHub-dark themed UI. Here are all its sections:
 
@@ -949,6 +904,49 @@ Dynamically computed from `Test Data.csv` and `my_test_results.csv`:
 - **Destination Port** multi-select (with "All" option)
 - **Trade Regime** multi-select (with "All" option)
 - **Risk Score Range** slider (0–100)
+
+---
+
+## 13. Command-Line Reference (`predict.py`)
+
+```bash
+python predict.py [OPTIONS]
+```
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--input` | str | **Required** | Path to the input shipment CSV file |
+| `--output` | str | `container_risk_predictions.csv` | Path for the output predictions CSV |
+| `--critical-threshold` | float | `55.0` | Risk score cutoff above which containers are labeled `Critical` |
+| `--low-risk-threshold` | float | `22.0` | Risk score cutoff above which containers are labeled `Low Risk` |
+| `--no-shap` | flag | False | Skip SHAP computation (faster, no explanations) |
+
+### Examples
+
+**Basic prediction:**
+```bash
+python predict.py --input "Test Data.csv"
+```
+
+**Custom output file:**
+```bash
+python predict.py --input "Test Data.csv" --output "my_test_results.csv"
+```
+
+**Adjust thresholds (stricter Critical definition):**
+```bash
+python predict.py --input "Test Data.csv" --critical-threshold 65 --low-risk-threshold 30
+```
+
+**Fast mode (skip SHAP, useful for very large datasets):**
+```bash
+python predict.py --input "Test Data.csv" --no-shap
+```
+
+**Save predictions generated during evaluation to test results file:**
+```bash
+python predict.py --input "Test Data.csv" --output "my_test_results.csv"
+```
 
 ---
 
