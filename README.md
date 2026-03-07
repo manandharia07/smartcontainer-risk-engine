@@ -53,54 +53,118 @@ The system is capable of processing historical training datasets of 100,000+ row
 
 ---
 
-## 2. Architecture & System Design
+## #2 architecture  system design
 
+Below are the architectural and workflow diagrams detailing how the SmartContainer Risk Engine operates.
+
+### 2.1. High-Level System Architecture
+
+```mermaid
+graph TD
+    classDef file fill:#2d2d2d,stroke:#58a6ff,stroke-width:2px,color:#e6edf3;
+    classDef script fill:#161b22,stroke:#3fb950,stroke-width:2px,color:#e6edf3;
+    classDef model fill:#0d1117,stroke:#d29922,stroke-width:2px,color:#e6edf3;
+    classDef ui fill:#0d1117,stroke:#bc8cff,stroke-width:2px,color:#e6edf3;
+
+    A[Historical Data CSV]:::file -->|Training| B(train_model.py):::script
+    B --> C[(Trained Model Artifacts)]:::model
+    
+    C -.->|risk_model.pkl| D
+    C -.->|isolation_forest.pkl| D
+    C -.->|label_encoders.pkl| D
+    C -.->|risk_rate_tables.pkl| D
+    
+    E[Test / New Shipment CSV]:::file -->|Inference| D(predict.py):::script
+    D --> F[Predictions CSV]:::file
+    F --> G(Streamlit Dashboard):::ui
+    
+    C -.->|Loads| G
+    E -.->|Live Upload| G
+    
+    subgraph Docker Container Environment
+        D
+        G
+        C
+    end
+    
+    User((Customs Officer)) -->|Interacts with| G
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                    SMARTCONTAINER RISK ENGINE                    │
-│                                                                  │
-│  ┌─────────────────┐    ┌──────────────────┐                    │
-│  │ Historical Data  │    │   Test Data.csv   │                   │
-│  │   (Training)     │    │   (Inference)     │                   │
-│  └────────┬────────┘    └────────┬─────────┘                    │
-│           │                      │                               │
-│           ▼                      ▼                               │
-│  ┌─────────────────────────────────────────┐                    │
-│  │         FEATURE ENGINEERING              │                    │
-│  │  Weight / Value / Time / HS-Code /       │                    │
-│  │  Entity Risk Rates / Route Analysis      │                    │
-│  └────────────────────┬────────────────────┘                    │
-│                       │                                          │
-│           ┌───────────┴───────────┐                             │
-│           ▼                       ▼                              │
-│  ┌─────────────────┐   ┌──────────────────────┐                │
-│  │ Isolation Forest │   │ LightGBM Classifier   │               │
-│  │ Anomaly Detection│   │ (SMOTE + 5-Fold CV)   │               │
-│  └────────┬────────┘   └──────────┬───────────┘                │
-│           │                        │                             │
-│           └──────────┬─────────────┘                            │
-│                      ▼                                           │
-│           ┌──────────────────────┐                              │
-│           │  Risk Score (0–100)  │                              │
-│           │  + Risk Level Label  │                              │
-│           └──────────┬───────────┘                              │
-│                      │                                           │
-│                      ▼                                           │
-│           ┌──────────────────────┐                              │
-│           │   SHAP Explainability │                             │
-│           │   (Top-3 Plain-Eng.) │                              │
-│           └──────────┬───────────┘                              │
-│                      │                                           │
-│           ┌──────────┴───────────┐                              │
-│           ▼                      ▼                               │
-│  ┌──────────────────┐  ┌────────────────────┐                  │
-│  │ Output CSV       │  │ Streamlit Dashboard │                  │
-│  │ (predictions)    │  │ (Interactive UI)    │                  │
-│  └──────────────────┘  └────────────────────┘                  │
-└──────────────────────────────────────────────────────────────────┘
+
+### 2.2. ML Training Workflow
+
+```mermaid
+flowchart TD
+    A[Raw Historical Data] --> B[Data Cleaning & Formatting]
+    B --> C[Feature Engineering]
+    
+    subgraph Feature Processing
+        C --> D1[Date/Time Features]
+        C --> D2[Weight Discrepancy]
+        C --> D3[Value/Kg Ratios]
+        C --> D4[Historical Entity Risk Rates]
+    end
+    
+    D1 & D2 & D3 & D4 --> E[Isolation Forest<br>Anomaly Detection]
+    
+    E -->|Appends Anomaly Score & Flag| F[Master Feature Set<br>34 Variables]
+    F --> G[SMOTE Class Balancing<br>Minority Oversampling]
+    
+    G --> H[LightGBM Classifier<br>5-Fold Cross Validation]
+    H --> J[SHAP TreeExplainer]
+    
+    J --> K[Final Output<br>Predictions & Explanations]
+```
+
+### 2.3. Risk Prediction / Inference Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User / System
+    participant P as predict.py / Dashboard
+    participant M as Model Artifacts
+    participant L as LightGBM
+    participant S as SHAP Explainer
+    
+    U->>P: Upload Test CSV
+    P->>M: Load Encoders & Risk Rates
+    P->>P: Engineer 34 Features natively
+    P->>M: Load Isolation Forest
+    P->>P: Compute Anomaly Score
+    P->>L: Predict Class Probabilities
+    L-->>P: Clear / Low Risk / Critical Probs
+    P->>P: Compute Band-Anchored Risk Score (0-100)
+    P->>S: Request Interpretability
+    S-->>P: Generate Top 3 SHAP Reasons
+    P->>U: Output container_risk_predictions.csv
+```
+
+### 2.4. Feature Engineering Structure
+
+```mermaid
+graph LR
+    F((34 Computed<br>Features)) --> W[Weight Discrepancy]
+    F --> V[Value & Quantities]
+    F --> E[Historical Entity Risk]
+    F --> T[Temporal Trends]
+    F --> A[Anomaly Detection]
+    F --> C[Categorical Embeddings]
+
+    W -->|Includes| w1(Weight Mismatch %)
+    W -->|Includes| w2(Measured/Declared Ratio)
+    
+    V -->|Includes| v1(Value per Kg log)
+    V -->|Includes| v2(Zero Value Flag)
+    
+    E -->|Includes| e1(Importer Risk Rate)
+    E -->|Includes| e2(Route Risk Rate)
+    
+    T -->|Includes| t1(Hour of Day & Month)
+    
+    A -->|Includes| a1(Isolation Forest Score)
 ```
 
 ---
+
 
 ## 3. Project Structure — Every File Explained
 
