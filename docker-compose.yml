@@ -1,0 +1,43 @@
+# ──────────────────────────────────────────────────────────────
+# SmartContainer Risk Engine — Docker Compose
+# ──────────────────────────────────────────────────────────────
+# Usage:
+#   docker compose up --build      # first run (builds image)
+#   docker compose up              # subsequent runs (fast start)
+#   docker compose down            # stop and remove containers
+# ──────────────────────────────────────────────────────────────
+
+services:
+  smartcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: smartcontainer-risk-engine
+
+    ports:
+      # host:container  — open http://localhost:8501 in your browser
+      - "8501:8501"
+
+    volumes:
+      # Mount CSV data files from host into the container.
+      # This means you can swap / update CSVs without rebuilding the image.
+      - ./Historical Data.csv:/app/Historical Data.csv:ro
+      - ./Test Data.csv:/app/Test Data.csv:ro
+      - ./my_test_results.csv:/app/my_test_results.csv:ro
+      - ./container_risk_predictions.csv:/app/container_risk_predictions.csv:ro
+
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8501/_stcore/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

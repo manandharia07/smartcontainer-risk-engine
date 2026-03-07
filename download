@@ -1,0 +1,43 @@
+# ──────────────────────────────────────────────────────────────
+# .dockerignore — SmartContainer Risk Engine
+# Exclude files from the Docker build context to keep image lean
+# ──────────────────────────────────────────────────────────────
+
+# CSV data files (mounted as volumes in docker-compose.yml instead)
+*.csv
+
+# PDF documents
+*.pdf
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.log
+*.tmp
+training_metrics.txt
