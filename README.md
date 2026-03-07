@@ -55,8 +55,6 @@ The system is capable of processing historical training datasets of 100,000+ row
 
 ## 2. Architecture & System Design
 
-![System Architecture Diagram](assets/system_architecture_diagram.png)
-
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                    SMARTCONTAINER RISK ENGINE                    │
@@ -202,8 +200,6 @@ The test dataset has the same schema as the training data. It may or may not inc
 
 ## 6. ML Pipeline — Step-by-Step
 
-![ML Workflow Diagram](assets/ml_workflow_diagram.png)
-
 The training pipeline is implemented in `train_model.py` and runs sequentially through 7 labeled steps printed to the console.
 
 ### Step 1 — Data Loading & Cleaning
@@ -226,8 +222,6 @@ df.rename(columns={
 ---
 
 ### Step 2 — Feature Engineering (25+ features)
-
-![Feature Engineering Diagram](assets/feature_engineering_diagram.png)
 
 This is the most important step. The raw 14 columns of shipment data are transformed into **33 engineered features** that capture the true risk signals:
 
@@ -538,7 +532,7 @@ These artifacts are loaded by both `predict.py` (CLI) and `dashboard.py` (web UI
 
 **1. Navigate to the project directory:**
 ```bash
-cd "HackaMined_B_Updated"
+cd "smartcontainer-risk-engine"
 ```
 
 **2. (Recommended) Create and activate a virtual environment:**
@@ -597,7 +591,7 @@ SmartContainer Risk Engine - Training Pipeline
 ============================================================
 
 [1/7] Loading data from 'Historical Data.csv' ...
-      Shape: (N, 16)
+      Shape: (54000, 16)
 
 [2/7] Feature engineering ...
       Computing entity risk rates ...
@@ -605,32 +599,38 @@ SmartContainer Risk Engine - Training Pipeline
       Saved risk_rate_tables.pkl
 
 [3/7] Isolation Forest anomaly detection ...
-      Anomalies detected: XXXX (5.0%)
+      Anomalies detected: 2700 (5.0%)
 
 [4/7] Stratified 5-Fold Cross-Validation ...
-      Fold 1: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
-      Fold 2: ...
-      ...
+      Fold 1: Macro F1=0.9837  F1_Critical=0.9554  Recall_Critical=0.9817
+      Fold 2: Macro F1=0.9851  F1_Critical=0.9596  Recall_Critical=0.9817
+      Fold 3: Macro F1=0.9832  F1_Critical=0.9541  Recall_Critical=0.9541
+      Fold 4: Macro F1=0.9868  F1_Critical=0.9643  Recall_Critical=0.9908
+      Fold 5: Macro F1=0.9835  F1_Critical=0.9554  Recall_Critical=0.9817
+
   -- CV Summary -------------------------------------------
-  Macro F1        : X.XXXX +/- X.XXXX
-  F1_Critical     : X.XXXX +/- X.XXXX
-  Recall_Critical : X.XXXX +/- X.XXXX
+  Macro F1        : 0.9845 +/- 0.0014
+  F1_Critical     : 0.9578 +/- 0.0038
+  Recall_Critical : 0.9780 +/- 0.0124
+
 
 [5/7] Training final model on full dataset ...
   -- Full-Dataset Metrics ---------------------------------
               precision  recall  f1-score  support
-       Clear    X.XXXX   X.XXXX   X.XXXX    XXXXX
-    Low Risk    X.XXXX   X.XXXX   X.XXXX    XXXXX
-    Critical    X.XXXX   X.XXXX   X.XXXX    XXXXX
+       Clear    1.0000   1.0000   1.0000    42347
+    Low Risk    1.0000   1.0000   1.0000    11108
+    Critical    1.0000   1.0000   1.0000      545
+
 
 [6/7] Computing Risk Scores and SHAP explanations ...
       Risk Level distribution:
-        Clear       XXXXX
-        Low Risk    XXXXX
-        Critical    XXXXX
+        Clear       42347
+        Low Risk    11108
+        Critical      545
+
 
 [7/7] Saving predictions to 'container_risk_predictions.csv' ...
-      Saved XXXXX rows to 'container_risk_predictions.csv'
+      Saved 54000 rows to 'container_risk_predictions.csv'
 ============================================================
 Training Complete!
   Model saved   : risk_model.pkl
@@ -653,7 +653,7 @@ Training Complete!
 ### Step B — Run Inference on Test Data
 
 ```bash
-python predict.py --input "Test Data.csv"
+python predict.py --input "Test Data.csv" --output my_test_results.csv
 ```
 
 **Default behavior:**
@@ -662,10 +662,11 @@ python predict.py --input "Test Data.csv"
 - Runs Isolation Forest anomaly scoring
 - Predicts risk score and risk level for each container
 - Computes SHAP explanations (top-3 plain-English reasons)
-- Saves results to `container_risk_predictions.csv`
+- Saves results to `my_test_results.csv`
 - If `Clearance_Status` column exists in input, prints full evaluation metrics
 
-**Output file:** `container_risk_predictions.csv` (or custom path)
+**Output file:** `my_test_results.csv`
+** Make Sure that File name remain same as it is mentioned above. **
 
 ---
 
@@ -1041,4 +1042,4 @@ CTR-000003,41.67,Low Risk,"Declared value appears suspiciously low; This is a lo
 
 ---
 
-*SmartContainer Risk Engine — HackaMined 2026 · Track 8 INTECH*
+*SmartContainer Risk Engine — HackaMined 2026 · Track 9 INTECH*
