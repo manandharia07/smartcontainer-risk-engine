@@ -110,7 +110,6 @@ graph TD
 ### 3.2. ML Training Workflow
 
 *(AI Conceptual Training Workflow)*
-![ML Training Workflow](images/ml_training_workflow.png)
 
 ```mermaid
 flowchart TD
