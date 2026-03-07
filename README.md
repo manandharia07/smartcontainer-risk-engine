@@ -1,6 +1,6 @@
 # 🚢 SmartContainer Risk Engine
 
-> **AI-powered container shipment risk scoring, anomaly detection, and explainability — built for HackaMined 2026 (Track 8 INTECH)**
+> **AI-powered container shipment risk scoring, anomaly detection, and explainability — built for HackaMined 2026 (Track 9 INTECH)**
 
 ---
 
@@ -489,7 +489,7 @@ out_df.to_csv("container_risk_predictions.csv", index=False)
 | Column | Type | Example |
 |--------|------|---------|
 | `Container_ID` | String | `CTR-000001` |
-| `Risk_Score` | Float (0–100) | `78.34` |
+| `Risk_Score` | Float (0–100) | `98.34` |
 | `Risk_Level` | String | `Critical` |
 | `Explanation_Summary` | String | `This importer has a history of flagged shipments; Severe weight discrepancy detected; Shipment is in transit regime` |
 
