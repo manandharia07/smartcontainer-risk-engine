@@ -1,446 +1,347 @@
 # 🚢 SmartContainer Risk Engine
-### HackaMined 2026 — Track 9 INTECH | Team Submission
 
-> **An end-to-end AI/ML system for intelligent container shipment risk scoring, anomaly detection, and real-time inspection prioritization — powered by LightGBM, SHAP Explainability, and Docker.**
+> **AI-powered container shipment risk scoring, anomaly detection, and explainability — built for HackaMined 2026 (Track 8 INTECH)**
 
 ---
 
 ## 📋 Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [Problem Statement](#2-problem-statement)
-3. [System Architecture](#3-system-architecture)
-4. [Project File Structure](#4-project-file-structure)
+2. [Architecture & System Design](#2-architecture--system-design)
+3. [Project Structure — Every File Explained](#3-project-structure--every-file-explained)
+4. [Dataset Description](#4-dataset-description)
 5. [Technology Stack](#5-technology-stack)
-6. [Data Description](#6-data-description)
-7. [ML Pipeline — Step-by-Step Breakdown](#7-ml-pipeline--step-by-step-breakdown)
-   - [Step 1: Data Loading & Cleaning](#step-1-data-loading--cleaning)
-   - [Step 2: Feature Engineering (34 Features)](#step-2-feature-engineering-34-features)
-   - [Step 3: Isolation Forest Anomaly Detection](#step-3-isolation-forest-anomaly-detection)
-   - [Step 4: Class Imbalance Handling with SMOTE](#step-4-class-imbalance-handling-with-smote)
-   - [Step 5: LightGBM Model Training (5-Fold CV)](#step-5-lightgbm-model-training-5-fold-cv)
-   - [Step 6: Band-Anchored Risk Scoring (0–100)](#step-6-band-anchored-risk-scoring-0100)
-   - [Step 7: SHAP Explainability](#step-7-shap-explainability)
-8. [Risk Classification Logic](#8-risk-classification-logic)
-9. [Dashboard Sections & Features](#9-dashboard-sections--features)
-10. [How to Run — Local (Without Docker)](#10-how-to-run--local-without-docker)
-    - [Prerequisites](#prerequisites)
-    - [Step-by-Step Local Setup](#step-by-step-local-setup)
-    - [Step 1: Clone / Download the Project](#step-1-clone--download-the-project)
-    - [Step 2: Create a Virtual Environment](#step-2-create-a-virtual-environment)
-    - [Step 3: Install Dependencies](#step-3-install-dependencies)
-    - [Step 4: Train the Model](#step-4-train-the-model)
-    - [Step 5: Run Predictions on Test Data](#step-5-run-predictions-on-test-data)
-    - [Step 6: Launch the Dashboard](#step-6-launch-the-dashboard)
-11. [How to Run — Docker (Recommended)](#11-how-to-run--docker-recommended)
-    - [Prerequisites for Docker](#prerequisites-for-docker)
-    - [Method A: Docker Compose (Easiest)](#method-a-docker-compose-easiest)
-    - [Method B: Manual Docker Build & Run](#method-b-manual-docker-build--run)
-12. [Command-Line Inference (predict.py)](#12-command-line-inference-predictpy)
-13. [Model Artifacts Explained](#13-model-artifacts-explained)
-14. [Evaluation Metrics](#14-evaluation-metrics)
-15. [Dashboard Usage Guide](#15-dashboard-usage-guide)
-16. [Troubleshooting](#16-troubleshooting)
-17. [Key Design Decisions & Important Notes](#17-key-design-decisions--important-notes)
+6. [ML Pipeline — Step-by-Step](#6-ml-pipeline--step-by-step)
+   - [Step 1 — Data Loading & Cleaning](#step-1--data-loading--cleaning)
+   - [Step 2 — Feature Engineering (25+ features)](#step-2--feature-engineering-25-features)
+   - [Step 3 — Anomaly Detection (Isolation Forest)](#step-3--anomaly-detection-isolation-forest)
+   - [Step 4 — Class Imbalance Handling (SMOTE)](#step-4--class-imbalance-handling-smote)
+   - [Step 5 — Model Training (LightGBM + Stratified CV)](#step-5--model-training-lightgbm--stratified-cv)
+   - [Step 6 — Risk Scoring (0–100 Scale)](#step-6--risk-scoring-0100-scale)
+   - [Step 7 — SHAP Explainability](#step-7--shap-explainability)
+   - [Step 8 — Output CSV Generation](#step-8--output-csv-generation)
+7. [Risk Level Thresholds](#7-risk-level-thresholds)
+8. [Model Artifacts](#8-model-artifacts)
+9. [Setup & Installation (Local)](#9-setup--installation-local)
+10. [Running the Project — Full Step-by-Step](#10-running-the-project--full-step-by-step)
+    - [Step A — Train the Model](#step-a--train-the-model)
+    - [Step B — Run Inference on Test Data](#step-b--run-inference-on-test-data)
+    - [Step C — Launch the Dashboard](#step-c--launch-the-dashboard)
+11. [Command-Line Reference (predict.py)](#11-command-line-reference-predictpy)
+12. [Docker Deployment](#12-docker-deployment)
+13. [Dashboard — All Sections Explained](#13-dashboard--all-sections-explained)
+14. [Model Evaluation Metrics](#14-model-evaluation-metrics)
+15. [Feature Importance & Explainability](#15-feature-importance--explainability)
+16. [Key Design Decisions](#16-key-design-decisions)
+17. [Troubleshooting](#17-troubleshooting)
+18. [Output File Format](#18-output-file-format)
 
 ---
 
 ## 1. Project Overview
 
-The **SmartContainer Risk Engine** is a complete, production-ready AI system designed for customs authorities and port operators to:
+The **SmartContainer Risk Engine** is an end-to-end AI/ML system designed to assist customs authorities in identifying high-risk container shipments that require physical inspection. It:
 
-- **Automatically score** each incoming container shipment with a continuous risk score (0–100)
-- **Classify** every shipment into one of three risk bands: 🔴 **Critical**, 🟡 **Low Risk**, or 🟢 **Clear**
-- **Detect anomalies** in weight declarations, values, and behavioral patterns using unsupervised learning
-- **Explain every prediction** in plain English using SHAP (SHapley Additive exPlanations)
-- **Visualize** all analytics through a dark-themed, interactive Streamlit web dashboard
+- **Ingests** structured container shipment declaration data (CSV format)
+- **Predicts** a continuous risk score (0–100) for each container
+- **Classifies** each container into one of three risk levels: `Critical`, `Low Risk`, or `Clear`
+- **Detects** statistical anomalies (unusual shipment patterns vs. historical norms)
+- **Explains** each prediction in plain English using SHAP values, identifying the top 3 contributing risk factors
+- **Visualizes** all results through an interactive Streamlit dashboard
 
-The system is fully containerized with Docker and includes a pre-trained model so the dashboard can start immediately without requiring re-training.
-
----
-
-## 2. Problem Statement
-
-Customs authorities face the challenge of manually inspecting millions of container shipments while having limited manpower and time. Most shipments are legitimate, but a small fraction contain fraudulent declarations, under-valued goods, or smuggled contents. Randomly selecting containers for inspection is inefficient.
-
-**The solution:** Use historical inspection data to train a machine learning model that assigns a risk score to every incoming shipment, enabling customs officers to prioritize inspections on high-risk containers while letting low-risk shipments pass through faster.
+The system is capable of processing historical training datasets of 100,000+ rows and scoring new test batches through both a command-line interface and a browser-based dashboard.
 
 ---
 
-## 3. System Architecture & Workflows
+## 2. Architecture & System Design
 
-Below are the architectural and workflow diagrams detailing how the SmartContainer Risk Engine operates.
+![System Architecture Diagram](assets/system_architecture_diagram.png)
 
-### 3.1. High-Level System Architecture
-
-*(AI Conceptual System Architecture Diagram)*
-![High-Level System Architecture](images/system_architecture.png)
-
-```mermaid
-graph TD
-    classDef file fill:#2d2d2d,stroke:#58a6ff,stroke-width:2px,color:#e6edf3;
-    classDef script fill:#161b22,stroke:#3fb950,stroke-width:2px,color:#e6edf3;
-    classDef model fill:#0d1117,stroke:#d29922,stroke-width:2px,color:#e6edf3;
-    classDef ui fill:#0d1117,stroke:#bc8cff,stroke-width:2px,color:#e6edf3;
-
-    A[Historical Data CSV]:::file -->|Training| B(train_model.py):::script
-    B --> C[(Trained Model Artifacts)]:::model
-    
-    C -.->|risk_model.pkl| D
-    C -.->|isolation_forest.pkl| D
-    C -.->|label_encoders.pkl| D
-    C -.->|risk_rate_tables.pkl| D
-    
-    E[Test / New Shipment CSV]:::file -->|Inference| D(predict.py):::script
-    D --> F[Predictions CSV]:::file
-    F --> G(Streamlit Dashboard):::ui
-    
-    C -.->|Loads| G
-    E -.->|Live Upload| G
-    
-    subgraph Docker Container Environment
-        D
-        G
-        C
-    end
-    
-    User((Customs Officer)) -->|Interacts with| G
 ```
-
-### 3.2. ML Training Workflow
-
-*(AI Conceptual Training Workflow)*
-
-```mermaid
-flowchart TD
-    A[Raw Historical Data] --> B[Data Cleaning & Formatting]
-    B --> C[Feature Engineering]
-    
-    subgraph Feature Processing
-        C --> D1[Date/Time Features]
-        C --> D2[Weight Discrepancy]
-        C --> D3[Value/Kg Ratios]
-        C --> D4[Historical Entity Risk Rates]
-    end
-    
-    D1 & D2 & D3 & D4 --> E[Isolation Forest<br>Anomaly Detection]
-    
-    E -->|Appends Anomaly Score & Flag| F[Master Feature Set<br>34 Variables]
-    F --> G[SMOTE Class Balancing<br>Minority Oversampling]
-    
-    G --> H[LightGBM Classifier<br>5-Fold Cross Validation]
-    H --> I[Band-Anchored Scoring Logic]
-    H --> J[SHAP TreeExplainer]
-    
-    I & J --> K[Final Output<br>Predictions & Explanations]
-```
-
-### 3.3. Risk Prediction / Inference Flow
-
-*(AI Conceptual Inference Flow)*
-![Risk Prediction Inference Flow](images/risk_prediction_flow.png)
-
-```mermaid
-sequenceDiagram
-    participant U as User / System
-    participant P as predict.py / Dashboard
-    participant M as Model Artifacts
-    participant L as LightGBM
-    participant S as SHAP Explainer
-    
-    U->>P: Upload Test CSV
-    P->>M: Load Encoders & Risk Rates
-    P->>P: Engineer 34 Features natively
-    P->>M: Load Isolation Forest
-    P->>P: Compute Anomaly Score
-    P->>L: Predict Class Probabilities
-    L-->>P: Clear / Low Risk / Critical Probs
-    P->>P: Compute Band-Anchored Risk Score (0-100)
-    P->>S: Request Interpretability
-    S-->>P: Generate Top 3 SHAP Reasons
-    P->>U: Output container_risk_predictions.csv
-```
-
-### 3.4. Feature Engineering Structure
-
-*(AI Conceptual Feature Diagram)*
-![Feature Engineering Structure](images/feature_diagram.png)
-
-```mermaid
-graph LR
-    F((34 Computed<br>Features)) --> W[Weight Discrepancy]
-    F --> V[Value & Quantities]
-    F --> E[Historical Entity Risk]
-    F --> T[Temporal Trends]
-    F --> A[Anomaly Detection]
-    F --> C[Categorical Embeddings]
-
-    W -->|Includes| w1(Weight Mismatch %)
-    W -->|Includes| w2(Measured/Declared Ratio)
-    
-    V -->|Includes| v1(Value per Kg log)
-    V -->|Includes| v2(Zero Value Flag)
-    
-    E -->|Includes| e1(Importer Risk Rate)
-    E -->|Includes| e2(Route Risk Rate)
-    
-    T -->|Includes| t1(Hour of Day & Month)
-    
-    A -->|Includes| a1(Isolation Forest Score)
-```
-
-### 3.5. Dashboard Data Flow
-
-*(AI Conceptual Dashboard Data Flow)*
-![Dashboard Data Flow](images/dashboard_data_flow.png)
-
-```mermaid
-stateDiagram-v2
-    [*] --> DashboardLoaded
-    
-    state DashboardLoaded {
-        [*] --> LoadModelArtifacts
-        LoadModelArtifacts --> CacheHistoricalData
-    }
-    
-    DashboardLoaded --> UserUploadsCSV: Upload new test data
-    
-    UserUploadsCSV --> PredictionPipeline: Trigger Inference
-    state PredictionPipeline {
-        FeatureEngineering --> AnomalyDetection
-        AnomalyDetection --> ModelScoring
-        ModelScoring --> SHAPExplanations
-        SHAPExplanations --> FormattedOutput
-    }
-    
-    PredictionPipeline --> UpdateUI
-    
-    state "Update UI Components" as UpdateUI {
-        RefreshKPIs
-        UpdateRiskDistributionPie
-        UpdateInteractiveScatter
-        UpdateRiskTable
-    }
-    
-    UpdateUI --> [*]: Await next interaction
+┌──────────────────────────────────────────────────────────────────┐
+│                    SMARTCONTAINER RISK ENGINE                    │
+│                                                                  │
+│  ┌─────────────────┐    ┌──────────────────┐                    │
+│  │ Historical Data  │    │   Test Data.csv   │                   │
+│  │   (Training)     │    │   (Inference)     │                   │
+│  └────────┬────────┘    └────────┬─────────┘                    │
+│           │                      │                               │
+│           ▼                      ▼                               │
+│  ┌─────────────────────────────────────────┐                    │
+│  │         FEATURE ENGINEERING              │                    │
+│  │  Weight / Value / Time / HS-Code /       │                    │
+│  │  Entity Risk Rates / Route Analysis      │                    │
+│  └────────────────────┬────────────────────┘                    │
+│                       │                                          │
+│           ┌───────────┴───────────┐                             │
+│           ▼                       ▼                              │
+│  ┌─────────────────┐   ┌──────────────────────┐                │
+│  │ Isolation Forest │   │ LightGBM Classifier   │               │
+│  │ Anomaly Detection│   │ (SMOTE + 5-Fold CV)   │               │
+│  └────────┬────────┘   └──────────┬───────────┘                │
+│           │                        │                             │
+│           └──────────┬─────────────┘                            │
+│                      ▼                                           │
+│           ┌──────────────────────┐                              │
+│           │  Risk Score (0–100)  │                              │
+│           │  + Risk Level Label  │                              │
+│           └──────────┬───────────┘                              │
+│                      │                                           │
+│                      ▼                                           │
+│           ┌──────────────────────┐                              │
+│           │   SHAP Explainability │                             │
+│           │   (Top-3 Plain-Eng.) │                              │
+│           └──────────┬───────────┘                              │
+│                      │                                           │
+│           ┌──────────┴───────────┐                              │
+│           ▼                      ▼                               │
+│  ┌──────────────────┐  ┌────────────────────┐                  │
+│  │ Output CSV       │  │ Streamlit Dashboard │                  │
+│  │ (predictions)    │  │ (Interactive UI)    │                  │
+│  └──────────────────┘  └────────────────────┘                  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Project File Structure
+## 3. Project Structure — Every File Explained
 
 ```
 HackaMined_B_Updated/
 │
-├── 📄 train_model.py               # Full training pipeline (run once to train)
-├── 📄 predict.py                   # CLI inference script for new shipment CSVs
-├── 📄 dashboard.py                 # Streamlit interactive web dashboard (1462 lines)
-├── 📄 requirements.txt             # Python package dependencies
+├── train_model.py                 # ← MAIN TRAINING SCRIPT (run this first)
+├── predict.py                     # ← INFERENCE SCRIPT (CLI-based prediction)
+├── dashboard.py                   # ← STREAMLIT DASHBOARD (web interface)
 │
-├── 🐳 Dockerfile                   # Docker image definition (Python 3.11-slim)
-├── 🐳 docker-compose.yml           # One-command Docker deployment
-├── 📄 .dockerignore                # Files excluded from Docker build context
+├── Historical Data.csv            # ← Training dataset (~100K+ rows)
+├── Test Data.csv                  # ← Official test dataset for evaluation
 │
-├── 📊 Historical Data.csv          # Training dataset (~6.4 MB, primary source)
-├── 📊 Test Data.csv                # Test/inference dataset (~1 MB)
-├── 📊 my_test_results.csv          # Pre-computed predictions for Test Data.csv
-├── 📊 container_risk_predictions.csv  # Predictions from training data
+├── risk_model.pkl                 # ← Trained LightGBM model (binary, ~10 MB)
+├── isolation_forest.pkl           # ← Trained Isolation Forest model (~3.5 MB)
+├── label_encoders.pkl             # ← LabelEncoders for categorical columns (~278 KB)
+├── risk_rate_tables.pkl           # ← Precomputed entity risk lookup tables (~568 KB)
 │
-├── 🤖 risk_model.pkl               # Saved LightGBM model (~10 MB)
-├── 🤖 isolation_forest.pkl         # Saved Isolation Forest model (~3.5 MB)
-├── 🤖 label_encoders.pkl           # Saved LabelEncoder objects (~278 KB)
-└── 🤖 risk_rate_tables.pkl         # Entity risk rate lookup tables (~568 KB)
+├── container_risk_predictions.csv # ← Predictions on Historical Data (training output)
+├── my_test_results.csv            # ← Predictions on Test Data (evaluation output)
+│
+├── requirements.txt               # ← Python package dependencies
+├── Dockerfile                     # ← Docker container definition
+├── docker-compose.yml             # ← Docker Compose orchestration
+└── .dockerignore                  # ← Files excluded from Docker image build
 ```
 
-> **Note:** The `.pkl` model files are pre-trained and included in the project. You do **not** need to run `train_model.py` to use the dashboard — it works immediately out of the box.
+### Detailed File Descriptions
+
+| File | Role | Size | Notes |
+|------|------|------|-------|
+| `train_model.py` | Full ML pipeline: data loading → feature engineering → anomaly detection → SMOTE → LightGBM training → SHAP → CSV output | 529 lines | **Run first.** Produces all `.pkl` files |
+| `predict.py` | CLI inference: loads saved model artifacts and scores any new shipment CSV | 377 lines | Requires all `.pkl` files from training |
+| `dashboard.py` | Streamlit web dashboard with 8+ sections: KPIs, risk distribution, anomaly charts, SHAP, model metrics, upload + live prediction | 1462 lines | Port 8501 |
+| `Historical Data.csv` | Training data with labeled `Clearance_Status` column | ~6.4 MB | Used by `train_model.py` |
+| `Test Data.csv` | Unlabeled (or labeled) test data for evaluation | ~1 MB | Used by `predict.py` |
+| `risk_model.pkl` | Serialized LightGBM multi-class classifier | ~10 MB | Auto-generated |
+| `isolation_forest.pkl` | Serialized Isolation Forest anomaly detector | ~3.5 MB | Auto-generated |
+| `label_encoders.pkl` | Dict of `sklearn.LabelEncoder` objects for 7 categorical columns | ~278 KB | Auto-generated |
+| `risk_rate_tables.pkl` | Dict of entity → smoothed risk rate mappings for importers, exporters, countries, ports, shipping lines, routes | ~568 KB | Auto-generated |
+| `container_risk_predictions.csv` | Output predictions from training data | ~896 KB | Auto-generated |
+| `my_test_results.csv` | Output predictions from test data | ~1.6 MB | Auto-generated |
+| `requirements.txt` | All Python dependencies (9 packages) | 90 bytes | Used by pip and Docker |
+| `Dockerfile` | Container build instructions (Python 3.11 slim base) | 48 lines | For Docker deployment |
+| `docker-compose.yml` | Service definition: ports, volumes, env vars, health checks | 44 lines | Recommended for deployment |
+
+---
+
+## 4. Dataset Description
+
+### Training Data (`Historical Data.csv`)
+
+The training dataset contains historical container shipment declaration records. Each row represents a single container declaration. The key columns are:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `Container_ID` | String | Unique identifier for each container |
+| `Declaration_Date` | Date (YYYY-MM-DD) | Date the shipment declaration was submitted |
+| `Declaration_Time` | Time (HH:MM:SS) | Time the declaration was submitted |
+| `Importer_ID` | String/Categorical | Unique identifier for the importing company |
+| `Exporter_ID` | String/Categorical | Unique identifier for the exporting company |
+| `Origin_Country` | String | Country where the shipment originates |
+| `Destination_Country` | String | Country where the shipment is headed |
+| `Destination_Port` | String | The port of arrival |
+| `Shipping_Line` | String | Carrier/shipping company |
+| `HS_Code` | Integer | Harmonized System code classifying the type of goods (6-digit) |
+| `Declared_Weight` | Float | Weight declared on the customs form (kg) |
+| `Measured_Weight` | Float | Physically measured weight at the port (kg) |
+| `Declared_Value` | Float | Declared monetary value of the shipment (USD) |
+| `Dwell_Time_Hours` | Float | Number of hours the container sat at port |
+| `Trade_Regime` | Categorical | `Import`, `Export`, or `Transit` |
+| `Clearance_Status` | Categorical | **Target variable** — `Clear`, `Low Risk`, or `Critical` |
+
+### Test Data (`Test Data.csv`)
+
+The test dataset has the same schema as the training data. It may or may not include `Clearance_Status`. When present, the inference script automatically calculates evaluation metrics (F1, Recall, Confusion Matrix).
 
 ---
 
 ## 5. Technology Stack
 
-| Category | Library / Tool | Version | Purpose |
-|---|---|---|---|
-| **ML Framework** | LightGBM | Latest | Gradient Boosting Classifier |
-| **Anomaly Detection** | scikit-learn (IsolationForest) | Latest | Unsupervised anomaly detection |
-| **Class Balancing** | imbalanced-learn (SMOTE) | Latest | Synthetic minority oversampling |
-| **Explainability** | SHAP | Latest | TreeExplainer — feature importance |
-| **Data Processing** | Pandas, NumPy | Latest | Data manipulation and feature engineering |
-| **Model Persistence** | joblib | Latest | Saving/loading model artifacts |
-| **Web Dashboard** | Streamlit | Latest | Interactive data web application |
-| **Charts** | Plotly Express & Graph Objects | Latest | Interactive visualizations |
-| **Containerization** | Docker + Docker Compose | Latest | Reproducible deployment |
-| **Python** | Python | 3.11 | Runtime environment |
+| Component | Library/Tool | Version | Purpose |
+|-----------|-------------|---------|---------|
+| Language | Python | 3.11 | Core runtime |
+| Data Processing | Pandas, NumPy | Latest | Feature engineering, data manipulation |
+| ML Model | LightGBM (`lightgbm`) | Latest | Gradient boosted tree classifier — fast, handles class imbalance, excellent F1 |
+| Imbalance Handling | imbalanced-learn (`imblearn`) | Latest | SMOTE oversampling to balance Critical / Low Risk / Clear classes |
+| Anomaly Detection | scikit-learn `IsolationForest` | Latest | Unsupervised anomaly scorer |
+| Model Evaluation | scikit-learn metrics | Latest | F1, Recall, Confusion Matrix, Classification Report |
+| Explainability | SHAP (`shap`) | Latest | TreeExplainer for per-prediction feature attribution |
+| Model Serialization | joblib | Latest | Loading/saving `.pkl` model artifacts |
+| Dashboard | Streamlit | Latest | Interactive web dashboard |
+| Visualization | Plotly Express + Graph Objects | Latest | All charts: pie, histogram, bar, scatter, heatmap |
+| Containerization | Docker + Docker Compose | - | Reproducible deployment |
 
 ---
 
-## 6. Data Description
+## 6. ML Pipeline — Step-by-Step
 
-### Historical Data.csv (Training Data)
-The primary training dataset containing historical container shipment records with their known inspection outcomes.
+![ML Workflow Diagram](assets/ml_workflow_diagram.png)
 
-| Column Name | Type | Description |
-|---|---|---|
-| `Container_ID` | String | Unique identifier for each container |
-| `Declaration_Date` | Date (YYYY-MM-DD) | Date of customs declaration |
-| `Declaration_Time` | Time (HH:MM:SS) | Time of customs declaration |
-| `Origin_Country` | Categorical | Country of origin |
-| `Destination_Country` | Categorical | Destination country |
-| `Destination_Port` | Categorical | Target port of arrival |
-| `Shipping_Line` | Categorical | Carrier/shipping company name |
-| `Importer_ID` | Categorical | Unique importer identifier |
-| `Exporter_ID` | Categorical | Unique exporter identifier |
-| `HS_Code` | Integer | Harmonized System commodity code |
-| `Trade_Regime` | Categorical | Import / Export / Transit |
-| `Declared_Weight` | Float | Weight declared in customs documents (kg) |
-| `Measured_Weight` | Float | Physically measured/scanned weight (kg) |
-| `Declared_Value` | Float | Declared customs value (USD) |
-| `Dwell_Time_Hours` | Float | Time spent at port (hours) |
-| `Clearance_Status` | Categorical | **Target label**: Clear / Low Risk / Critical |
+The training pipeline is implemented in `train_model.py` and runs sequentially through 7 labeled steps printed to the console.
 
-### Test Data.csv (Inference Data)
-Same schema as Historical Data.csv (may or may not include `Clearance_Status` for evaluation).
-
-### Output CSV Format (Predictions)
-
-| Column | Description |
-|---|---|
-| `Container_ID` | Container identifier (matches input) |
-| `Risk_Score` | Continuous risk score from 0 to 100 |
-| `Risk_Level` | Classification: Critical / Low Risk / Clear |
-| `Explanation_Summary` | Top 3 plain-English SHAP-based reasons |
-
----
-
-## 7. ML Pipeline — Step-by-Step Breakdown
-
-### Step 1: Data Loading & Cleaning
-
-**File:** `train_model.py` (Lines 55–64)
+### Step 1 — Data Loading & Cleaning
 
 ```python
+# train_model.py — Lines 50–64
 df = pd.read_csv("Historical Data.csv")
-df.columns = [c.strip() for c in df.columns]  # strip whitespace from column names
+df.columns = [c.strip() for c in df.columns]   # remove whitespace from column headers
 df.rename(columns={
-    "Declaration_Date (YYYY-MM-DD)": "Declaration_Date",
+    "Declaration_Date (YYYY-MM-DD)":          "Declaration_Date",
     "Trade_Regime (Import / Export / Transit)": "Trade_Regime",
 }, inplace=True)
 ```
 
-- CSV is loaded and column names are normalized (whitespace removed)
-- Two verbose column names are aliased to shorter, cleaner names
-- No rows are dropped — all missing values are handled downstream
+**What happens:**
+- The CSV is loaded with Pandas, stripping any leading/trailing whitespace from column names
+- Two columns with verbose names in the raw data are renamed to cleaner short names for all downstream processing
+- The `Declaration_Date` column is parsed as a proper `datetime` type
 
 ---
 
-### Step 2: Feature Engineering (34 Features)
+### Step 2 — Feature Engineering (25+ features)
 
-**File:** `train_model.py` (Lines 69–165)
+![Feature Engineering Diagram](assets/feature_engineering_diagram.png)
 
-This is the heart of the system. Raw CSV columns are transformed into 34 informative model features grouped into 7 categories:
+This is the most important step. The raw 14 columns of shipment data are transformed into **33 engineered features** that capture the true risk signals:
 
 #### 2a. Date/Time Features
+```python
+df["hour_of_day"]  = ...    # Hour of declaration (0–23)
+df["day_of_week"]  = ...    # Day of week (0=Monday, 6=Sunday)
+df["month"]        = ...    # Month (1–12)
+df["year"]         = ...    # Year
 ```
-hour_of_day    — Hour of customs declaration (0–23); night declarations flag risk
-day_of_week    — 0=Monday to 6=Sunday; weekend declarations can be anomalous
-month          — Month number; captures seasonal risk patterns
-year           — Year; for temporal trend modeling
-```
+**Why:** Suspicious declarations often happen at unusual hours (e.g., late night), unusual days, or during particular seasons.
 
 #### 2b. Weight Discrepancy Features
+```python
+df["weight_diff_abs"]       = Measured_Weight - Declared_Weight
+df["weight_diff_pct"]       = weight_diff_abs / (Declared_Weight + 0.001) * 100
+df["weight_mismatch_flag"]  = 1 if |weight_diff_pct| > 5%   else 0
+df["weight_mismatch_severe"]= 1 if |weight_diff_pct| > 15%  else 0
+df["weight_ratio"]          = Measured_Weight / (Declared_Weight + 0.001)
 ```
-weight_diff_abs        — Absolute difference: Measured_Weight - Declared_Weight
-weight_diff_pct        — Percentage discrepancy: (diff / declared) × 100
-weight_mismatch_flag   — Binary: 1 if |diff_pct| > 5%
-weight_mismatch_severe — Binary: 1 if |diff_pct| > 15%
-weight_ratio           — Measured / Declared weight ratio
-```
-> Weight discrepancy is the single most important fraud indicator. Smugglers typically declare less weight to reduce duties.
+**Why:** The single most important fraud indicator. Smugglers often under-declare weight to reduce duties or hide contraband. A discrepancy >5% triggers a flag; >15% is severe.
 
 #### 2c. Value Features
+```python
+df["value_per_kg"]          = Declared_Value / (Declared_Weight + 0.001)
+df["log_declared_value"]    = log1p(Declared_Value)
+df["log_declared_weight"]   = log1p(Declared_Weight)
+df["log_measured_weight"]   = log1p(Measured_Weight)
+df["log_dwell_time"]        = log1p(Dwell_Time_Hours)
+df["log_value_per_kg"]      = log1p(value_per_kg)
+df["zero_value_flag"]       = 1 if Declared_Value == 0 else 0
 ```
-value_per_kg        — Declared value normalized by weight; detects over/under-valuation
-log_declared_value  — Log-transform of declared value (handles extreme outliers)
-log_declared_weight — Log-transform of declared weight
-log_measured_weight — Log-transform of measured weight
-log_dwell_time      — Log-transform of dwell time (hours at port)
-log_value_per_kg    — Log-transform of value per kg ratio
-zero_value_flag     — Binary: 1 if Declared_Value == 0 (suspicious)
-```
+**Why:** Log-transforms reduce skew in highly right-skewed distributions. `value_per_kg` reveals goods that are suspiciously cheap or expensive for their weight class. Zero value declarations are classic under-valuation fraud.
 
 #### 2d. HS Code Chapter
+```python
+df["hs_chapter"] = HS_Code // 10000   # first 2 digits → chapter number
 ```
-hs_chapter — First 2 digits of HS code ÷ 10000 = commodity chapter
-             Certain chapters (e.g., electronics, chemicals, weapons) are high-risk
-```
+**Why:** The HS code identifies the type of goods. Some chapters (e.g., Chapter 93 = arms, Chapter 28 = chemicals) carry inherently higher risk. Collapsing the 6-digit code to its 2-digit chapter reduces cardinality.
 
 #### 2e. Trade Regime Flag
+```python
+df["is_transit"] = 1 if Trade_Regime == "Transit" else 0
 ```
-is_transit — Binary: 1 if Trade_Regime == "Transit"
-             Transit shipments bypass full inspection and carry higher inherent risk
-```
+**Why:** Transit shipments pass through a port without formal import clearance, making them harder to inspect and statistically riskier.
 
-#### 2f. Entity Risk Rates (Smoothed Historical Risk Rates)
-This is the most sophisticated feature group. For each high-cardinality entity (importer, exporter, country, port, shipping line, route), the system calculates a **smoothed historical critical rate**:
+#### 2f. Entity Risk Rates (Smoothed Bayesian Encoding)
+
+This is the most sophisticated feature group. For each entity type (importer, exporter, origin country, destination port, shipping line, destination country, and route), we compute the **smoothed historical fraction of Critical shipments**:
 
 ```python
-rate = (critical_count + smooth × global_rate) / (total_count + smooth)
+rate(entity) = (count_of_Critical_shipments + smoothing * global_Critical_rate) /
+               (total_shipments + smoothing)
 ```
 
-The smoothing factor (`smooth=10`) prevents overfitting on entities with few historical records by pulling their rate toward the global average.
+Where `smoothing = 10` — this prevents extreme rates for entities with few historical records.
 
-```
-importer_risk_rate      — Historical critical-shipment rate for this importer
-exporter_risk_rate      — Historical critical-shipment rate for this exporter
-country_risk_rate       — Historical critical-shipment rate for origin country
-port_risk_rate          — Historical critical-shipment rate for destination port
-shipping_line_risk_rate — Historical critical-shipment rate for this carrier
-dest_country_risk_rate  — Historical critical-shipment rate for destination country
-route_risk_rate         — Historical critical-shipment rate for this specific route
-entity_risk_combined    — Weighted composite of all entity rates:
-                          0.30×importer + 0.20×exporter + 0.15×country
-                          + 0.10×port + 0.10×shipping_line
-                          + 0.10×dest_country + 0.05×route
+```python
+df["importer_risk_rate"]      # How often this importer's shipments were Critical
+df["exporter_risk_rate"]      # How often this exporter's shipments were Critical
+df["country_risk_rate"]       # Critical rate for this origin country
+df["port_risk_rate"]          # Critical rate for this destination port
+df["shipping_line_risk_rate"] # Critical rate for this shipping line
+df["dest_country_risk_rate"]  # Critical rate for the destination country
+df["route_risk_rate"]         # Critical rate for the origin→destination route pair
 ```
 
-These entity risk tables are saved to `risk_rate_tables.pkl` and reused during inference so predictions on new data use training-time risk rates (no data leakage).
+These entity risk rates are **saved to `risk_rate_tables.pkl`** for use at inference time in `predict.py` (to avoid data leakage — test data cannot compute these from scratch).
 
-#### 2g. Label Encoding for High-Cardinality Categoricals
+**Combined Entity Risk Score (weighted sum):**
+```python
+entity_risk_combined = (
+    0.30 * importer_risk_rate +
+    0.20 * exporter_risk_rate +
+    0.15 * country_risk_rate  +
+    0.10 * port_risk_rate     +
+    0.10 * shipping_line_risk_rate +
+    0.10 * dest_country_risk_rate  +
+    0.05 * route_risk_rate
+)
 ```
-Origin_Country_enc        categorical → integer
-Destination_Country_enc   categorical → integer
-Destination_Port_enc      categorical → integer
-Shipping_Line_enc         categorical → integer
-Importer_ID_enc           categorical → integer
-Exporter_ID_enc           categorical → integer
+
+The importer gets the highest weight (30%) because it is the most predictive entity-level feature.
+
+#### 2g. Label Encoding for Categorical Columns
+
+```python
+# 7 categorical columns encoded to integer labels for LightGBM
+cat_cols = ["Origin_Country", "Destination_Country", "Destination_Port",
+            "Shipping_Line", "Importer_ID", "Exporter_ID", "Trade_Regime"]
 ```
-LabelEncoders are saved to `label_encoders.pkl` and applied identically at inference time. Unseen categories at inference return `-1`.
+
+Each column gets its own `sklearn.LabelEncoder`, which is saved to `label_encoders.pkl`. At inference time in `predict.py`, unseen categories (new importers, new countries, etc.) are assigned `-1` as a fallback.
 
 ---
 
-### Step 3: Isolation Forest Anomaly Detection
-
-**File:** `train_model.py` (Lines 170–193)
+### Step 3 — Anomaly Detection (Isolation Forest)
 
 ```python
+# train_model.py — Lines 170–193
 iso = IsolationForest(
     n_estimators=300,
-    contamination=0.05,   # expect ~5% anomalies
+    contamination=0.05,      # expects ~5% anomalies in data
     max_samples="auto",
     random_state=42,
-    n_jobs=-1
+    n_jobs=-1                # use all CPU cores
 )
 iso.fit(df[iso_features])
+
 df["anomaly_score"] = -iso.score_samples(df[iso_features])  # higher = more anomalous
 df["is_anomaly"]    = (iso.predict(df[iso_features]) == -1).astype(int)
 ```
 
-**How Isolation Forest works:**
-- Builds 300 decision trees that randomly isolate data points
-- Anomalous samples (unusual patterns) are isolated in fewer splits → shorter path length
-- The `anomaly_score` is the **negative** mean path length (higher = more anomalous)
-- `is_anomaly` is a binary flag derived from the 5% contamination threshold
-
-**Features used for anomaly detection (13 features):**
+**Isolation Forest Features (13 total):**
 ```
 log_declared_value, log_declared_weight, log_measured_weight,
 weight_diff_pct, weight_ratio, log_dwell_time, log_value_per_kg,
@@ -448,287 +349,255 @@ hour_of_day, hs_chapter, importer_risk_rate, exporter_risk_rate,
 country_risk_rate, is_transit
 ```
 
-Both `anomaly_score` and `is_anomaly` are added as features to the LightGBM model AND used in the risk score formula.
+**Why Isolation Forest?**
+- Unsupervised — does not rely on labels, so it can detect novel patterns not seen at training time
+- Efficient at high-dimensional data: isolates anomalies by randomly partitioning the feature space
+- Score inverted (`-score_samples`) so higher scores = more anomalous, which is intuitive
+- `contamination=0.05` means the model expects approximately 5% of shipments to be anomalous
+
+The anomaly score and flag are then **included as features in the LightGBM classifier**, allowing the supervised model to factor in statistical abnormality as an input.
+
+**Model saved to:** `isolation_forest.pkl`
 
 ---
 
-### Step 4: Class Imbalance Handling with SMOTE
+### Step 4 — Class Imbalance Handling (SMOTE)
 
-**File:** `train_model.py` (Lines 253–258)
-
-Real-world customs data is highly imbalanced: most shipments are `Clear`, with far fewer `Critical` cases.
+Container shipment data is **highly imbalanced** — the majority of containers are `Clear`, with `Critical` being a small minority.
 
 ```python
+from imblearn.over_sampling import SMOTE
+
 smote = SMOTE(
-    sampling_strategy="not majority",  # oversample minority classes to ~50% of majority
+    sampling_strategy="not majority",  # oversample all non-majority classes
     k_neighbors=5,
-    random_state=42,
+    random_state=42
 )
-X_tr_res, y_tr_res = smote.fit_resample(X_tr, y_tr)
+X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
 ```
 
-SMOTE (Synthetic Minority Over-sampling TEchnique) creates **synthetic** training examples for minority classes by interpolating between existing minority samples. This ensures the model learns to detect `Critical` and `Low Risk` cases even when they are underrepresented.
+**How SMOTE works:**
+- For each minority-class sample, it finds its K nearest neighbors in feature space
+- It then creates **synthetic interpolated samples** between the original sample and its neighbors
+- This artificially balances the class distribution without simply duplicating existing samples
+- SMOTE is applied **inside each cross-validation fold** (on the training split only, never the validation split) to prevent data leakage
 
-> SMOTE is applied **only to training folds** during cross-validation (never to the validation fold) to prevent data leakage.
+**Why not just oversample?** Simple oversampling duplicates existing samples and causes overfitting. SMOTE creates genuinely new synthetic samples along the real decision boundary, leading to better generalization.
 
 ---
 
-### Step 5: LightGBM Model Training (5-Fold Cross-Validation)
-
-**File:** `train_model.py` (Lines 231–335)
+### Step 5 — Model Training (LightGBM + Stratified CV)
 
 #### LightGBM Hyperparameters
-
 ```python
 lgb_params = dict(
-    objective        = "multiclass",   # 3-class classification
-    num_class        = 3,              # Clear=0, Low Risk=1, Critical=2
-    n_estimators     = 1200,           # max 1200 boosting rounds
-    learning_rate    = 0.04,           # slow, stable learning
-    num_leaves       = 63,             # controls model complexity
-    max_depth        = 8,              # prevents deep overfitting trees
-    min_child_samples= 10,             # min samples per leaf
-    subsample        = 0.8,            # 80% row sampling per tree
-    colsample_bytree = 0.8,            # 80% feature sampling per tree
-    reg_alpha        = 0.1,            # L1 regularization
-    reg_lambda       = 0.1,            # L2 regularization
-    class_weight     = "balanced",     # additional class weighting
-    random_state     = 42,
-    n_jobs           = -1,             # use all CPU cores
+    objective         = "multiclass",    # 3-class classification: Clear / Low Risk / Critical
+    num_class         = 3,
+    n_estimators      = 1200,            # 1200 trees in the ensemble
+    learning_rate     = 0.04,            # slow learning rate for better generalization
+    num_leaves        = 63,              # controls model complexity
+    max_depth         = 8,               # maximum tree depth
+    min_child_samples = 10,              # minimum samples per leaf
+    subsample         = 0.8,             # 80% of data per tree (bagging)
+    colsample_bytree  = 0.8,             # 80% of features per tree
+    reg_alpha         = 0.1,             # L1 regularization
+    reg_lambda        = 0.1,             # L2 regularization
+    class_weight      = "balanced",      # additional class balancing
+    random_state      = 42,
+    n_jobs            = -1,              # use all CPU cores
+    verbosity         = -1,              # silent
 )
 ```
 
-#### 5-Fold Stratified Cross-Validation
-- Data is split into 5 folds maintaining class proportions (`StratifiedKFold`)
-- SMOTE applied to each training fold
-- Early stopping: training halts if validation Macro F1 doesn't improve for 60 rounds
-- Metrics tracked per fold: **Macro F1**, **Critical F1**, **Critical Recall**
+**Why LightGBM?**
+- **Speed:** Much faster than XGBoost or Random Forest on large datasets
+- **Accuracy:** State-of-the-art on tabular classification tasks
+- **Handles categoricals natively** (though we also use label encoding)
+- **Built-in early stopping:** prevents overfitting; uses `eval_set` on validation fold with early stopping (patience=60 rounds)
 
-#### Final Model
-After cross-validation, a final model is trained on the **entire training dataset** (with SMOTE) and saved to `risk_model.pkl`.
-
----
-
-### Step 6: Band-Anchored Risk Scoring (0–100)
-
-**File:** `train_model.py` (Lines 347–383)
-
-This is a critical design innovation. Instead of using raw model probabilities directly as a risk score, the system uses a **band-anchored** approach:
-
-**Step 6a: The model determines the BAND**
-```
-pred_class → Clear (0), Low Risk (1), or Critical (2)
-Band ranges:  Clear: 2–20 | Low Risk: 23–53 | Critical: 56–98
-```
-
-**Step 6b: Continuous severity spreads the score within each band**
+#### Stratified 5-Fold Cross-Validation
 ```python
-severity = (
-    0.35 × weight_mismatch_severity    +  # how extreme is the weight mismatch
-    0.25 × entity_risk_combined        +  # how risky are the parties involved
-    0.20 × normalized_anomaly_score    +  # how statistically unusual is this shipment
-    0.20 × model_class_probability        # how confident is the model
-)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+for fold, (train_idx, val_idx) in enumerate(skf.split(X, y), 1):
+    # ... SMOTE inside fold, train, evaluate
 ```
 
-**Step 6c: Map severity to within-band range**
-```
-final_risk_score = band_min + severity × (band_max - band_min)
-```
+**Stratified** means each fold maintains the same proportion of Critical/Low Risk/Clear as the full dataset — critical for imbalanced data.
 
-**Why this approach?**
-- Prevents the impossible scenario where a "Low Risk" container scores 90 (which would be in the Critical band)
-- Maintains full 0–100 range for human interpretability
-- Preserves within-band relative ordering so the highest-risk "Critical" containers can still be ranked amongst themselves
+**Metrics tracked per fold:**
+- `Macro F1` — primary metric; average F1 across all 3 classes
+- `F1_Critical` — F1 score specifically for the `Critical` class (most important)
+- `Recall_Critical` — recall for `Critical` (how many actual Critical containers did we catch?)
+
+**After cross-validation**: The model is retrained on the **full dataset** with SMOTE applied globally, producing the final production model saved to `risk_model.pkl`.
 
 ---
 
-### Step 7: SHAP Explainability
+### Step 6 — Risk Scoring (0–100 Scale)
 
-**File:** `train_model.py` (Lines 388–522)
+The LightGBM model outputs **class probabilities** (`p_clear`, `p_low_risk`, `p_critical`) for each container. These are converted to a continuous risk score:
 
 ```python
-explainer    = shap.TreeExplainer(final_model)
-shap_values  = explainer.shap_values(X)  # shape: [3 classes] × [n_samples × 34 features]
+risk_raw   = 0.0 * p_clear + 0.35 * p_low_risk + 1.0 * p_critical
+risk_score = (risk_raw * 100).clip(0, 100).round(2)
 ```
 
-For each container, SHAP computes how much each of the 34 features **contributed** to the model's prediction.
+**Interpretation:**
+- A container with 100% `p_critical` gets a risk score of **100**
+- A container with 100% `p_clear` gets a risk score of **0**
+- A container with 100% `p_low_risk` gets a risk score of **35**
+- Mixed probabilities produce intermediate scores
 
-**Plain-English Conversion:**
-The top 3 features with the **highest positive SHAP values** (features that *pushed toward* the predicted risk level) are mapped to human-readable sentences via a lookup dictionary:
+The `Low Risk` class contributes at 35% weight (not 50%) to reflect that Low Risk is substantially less dangerous than Critical.
+
+---
+
+### Step 7 — SHAP Explainability
+
+SHAP (SHapley Additive exPlanations) provides **per-prediction feature attribution** using game theory principles — each feature gets a SHAP value representing how much it contributed to the model's prediction for that specific container.
 
 ```python
-# Example mappings:
-("weight_diff_pct",     "HIGH") → "Declared weight is more than 5% off from the measured weight"
-("importer_risk_rate",  "HIGH") → "This importer has a history of flagged or seized shipments"
-("anomaly_score",       "HIGH") → "Shipment shows highly unusual patterns compared to normal traffic"
-("is_transit",          "HIGH") → "Shipment is in transit regime, which carries inherently higher risk"
+explainer   = shap.TreeExplainer(final_model)
+shap_values = explainer.shap_values(X)   # shape: [3 classes][n_samples, n_features]
 ```
 
-Only **positive** SHAP features are included — this ensures explanations always describe *why* a shipment received the assigned risk level, never contradictory information.
-
-**Output example:**
+**Explanation Generation Logic:**
+```python
+def top_shap_reasons(shap_row, feature_names, top_n=3):
+    positive_idx = np.where(shap_row > 0)[0]   # features that INCREASED risk
+    top_idx = positive_idx[argsort(shap_row[positive_idx])[::-1][:top_n]]
+    return "; ".join([PLAIN_ENGLISH.get((feat, "HIGH"), ...) for feat in top_features])
 ```
-"Declared weight is more than 5% off from the measured weight;
- This trade route has a high incidence of flagged shipments;
- Shipment has been flagged as a statistical anomaly"
+
+**Key design choice:** Only **positive** SHAP features are included in the explanation — features that **pushed toward** the predicted risk level. Counter-evidence features (which would say "this is why it's NOT critical") are excluded to make explanations actionable and non-contradictory.
+
+**Plain-English Mapping:** Each feature+direction combination is mapped to a business-friendly sentence, e.g.:
+- `(importer_risk_rate, HIGH)` → *"This importer has a history of flagged or seized shipments"*
+- `(weight_mismatch_severe, HIGH)` → *"Severe weight discrepancy — more than 15% difference detected"*
+- `(is_transit, HIGH)` → *"Shipment is in transit regime, which carries inherently higher risk"*
+
+---
+
+### Step 8 — Output CSV Generation
+
+```python
+out_df = df[["Container_ID", "Risk_Score", "Risk_Level", "Explanation_Summary"]].copy()
+out_df.to_csv("container_risk_predictions.csv", index=False)
+```
+
+**Output columns:**
+| Column | Type | Example |
+|--------|------|---------|
+| `Container_ID` | String | `CTR-000001` |
+| `Risk_Score` | Float (0–100) | `78.34` |
+| `Risk_Level` | String | `Critical` |
+| `Explanation_Summary` | String | `This importer has a history of flagged shipments; Severe weight discrepancy detected; Shipment is in transit regime` |
+
+---
+
+## 7. Risk Level Thresholds
+
+![Risk Prediction Flow](assets/risk_prediction_flow.png)
+
+| Risk Level | Risk Score Range | Meaning | Action |
+|------------|-----------------|---------|--------|
+| 🔴 **Critical** | ≥ 55 | High probability of fraud/contraband | Mandatory physical inspection |
+| 🟡 **Low Risk** | ≥ 22 and < 55 | Some risk indicators present | Targeted documentary check |
+| 🟢 **Clear** | < 22 | Low risk; passes screening | No intervention required |
+
+**These thresholds are configurable** via command-line arguments in `predict.py`:
+```bash
+python predict.py --input "Test Data.csv" --critical-threshold 60 --low-risk-threshold 25
 ```
 
 ---
 
-## 8. Risk Classification Logic
+## 8. Model Artifacts
 
-| Risk Score Range | Risk Level | Meaning |
-|---|---|---|
-| **56 – 98** | 🔴 **Critical** | High probability of fraud, contraband, or significant misdeclaration. Prioritize for physical inspection. |
-| **23 – 53** | 🟡 **Low Risk** | Some suspicious indicators present. Secondary review recommended. |
-| **2 – 20** | 🟢 **Clear** | No significant risk indicators. Routine processing. |
+All model artifacts are **pre-generated** and included in the project directory. You do NOT need to retrain unless you want to update the model with new data.
 
-**Thresholds used in scoring:**
-- `CRITICAL_THRESH = 55` — score ≥ 55 → Critical
-- `LOW_RISK_THRESH = 22` — score ≥ 22 → Low Risk; score < 22 → Clear
+| Artifact | Size | Description |
+|----------|------|-------------|
+| `risk_model.pkl` | ~10 MB | Final LightGBM classifier (1200 estimators, 3-class) |
+| `isolation_forest.pkl` | ~3.5 MB | Anomaly detector (300 estimators, 5% contamination) |
+| `label_encoders.pkl` | ~278 KB | 7 `LabelEncoder` objects (one per categorical column) |
+| `risk_rate_tables.pkl` | ~568 KB | Smoothed entity risk rate lookup tables from training data |
 
----
-
-## 9. Dashboard Sections & Features
-
-**File:** `dashboard.py` (1,462 lines, Streamlit)
-
-The dashboard has the following sections accessible via the main page (all with dark theme, responsive layout):
-
-| Section | Description |
-|---|---|
-| **📤 Upload & Predict** | Upload any shipment CSV; live predictions run via SHAP + model; downloadable results CSV |
-| **📊 System Overview** | 6 KPI cards: Total Containers, Critical, Low Risk, Clear, Avg Risk Score, Avg Dwell Time. Plus secondary metrics: weight anomalies, critical rate, max risk score, zero-value containers |
-| **🎯 Risk Distribution** | Donut pie chart of risk level counts; Risk score histogram with threshold lines |
-| **🌍 Trade Flow Analysis** | Top 15 Origin Countries bar chart; Top 15 Destination Ports bar chart |
-| **🔬 Anomaly Detection** | Scatter: Declared vs Measured Weight colored by risk level; Histogram of weight mismatch % |
-| **⏱️ Dwell Time Analysis** | Box plot of dwell time by risk level; Histogram with threshold lines |
-| **📅 Time Series Trends** | Monthly shipment counts over time; Monthly average risk score trend |
-| **🏆 Highest-Risk Containers** | Filterable table of top-N containers by risk score with explanations |
-| **📋 Model Evaluation Metrics** | Precision, Recall, F1 per class; Macro/Weighted averages; Accuracy; Confusion matrix heatmap |
-
-**Sidebar Filters** (apply globally to all charts):
-- Risk Level (multi-select)
-- Origin Country (multi-select)
-- Destination Port (multi-select)
-- Trade Regime (multi-select)
-- Risk Score Range (slider 0–100)
+These artifacts are loaded by both `predict.py` (CLI) and `dashboard.py` (web UI) at startup.
 
 ---
 
-## 10. How to Run — Local (Without Docker)
+## 9. Setup & Installation (Local)
 
 ### Prerequisites
+- Python **3.9+** (3.11 recommended)
+- pip
+- (Optional) Git
 
-- **Python 3.9 or higher** (3.11 recommended for best compatibility)
-- **pip** (Python package installer)
-- **Git** (optional, for cloning)
-- Minimum **4 GB RAM** (8 GB recommended for SHAP computation on large datasets)
-- Minimum **2 GB free disk space**
+### Step-by-Step Installation
 
-### Step-by-Step Local Setup
-
-#### Step 1: Clone / Download the Project
-
-**Option A — Clone using Git:**
+**1. Navigate to the project directory:**
 ```bash
-git clone <your-repo-url>
-cd HackaMined_B_Updated
+cd "HackaMined_B_Updated"
 ```
 
-**Option B — Download ZIP:**
-- Download and extract the project ZIP file
-- Open a terminal/command prompt and navigate to the extracted folder:
-```bash
-cd "path\to\HackaMined_B_Updated"
+**2. (Recommended) Create and activate a virtual environment:**
+
+On Windows (PowerShell):
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
 
-> **IMPORTANT:** Make sure the following CSV files are present in the project root directory:
-> - `Historical Data.csv`
-> - `Test Data.csv`
-> - `my_test_results.csv`
-> - `container_risk_predictions.csv`
-
----
-
-#### Step 2: Create a Virtual Environment
-
-Creating a virtual environment isolates the project dependencies from your system Python.
-
-**Windows:**
+On macOS/Linux:
 ```bash
 python -m venv venv
-venv\Scripts\activate
-```
-
-**macOS / Linux:**
-```bash
-python3 -m venv venv
 source venv/bin/activate
 ```
 
-You should see `(venv)` appear at the start of your terminal prompt, confirming the virtual environment is active.
-
----
-
-#### Step 3: Install Dependencies
-
+**3. Install all dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
 
-This installs the following packages:
+This installs:
 ```
-pandas          — Data manipulation
-numpy           — Numerical computing
-scikit-learn    — Isolation Forest, LabelEncoder, metrics, cross-validation
-lightgbm        — Gradient boosting classifier
+pandas          — data loading and manipulation
+numpy           — numerical operations
+scikit-learn    — LabelEncoder, IsolationForest, metrics, StratifiedKFold
+lightgbm        — gradient boosted tree classifier
 imbalanced-learn — SMOTE oversampling
-shap            — SHAP explainability
-joblib          — Model save/load
-streamlit       — Dashboard web app
-plotly          — Interactive charts
+shap            — SHAP explainability (TreeExplainer)
+joblib          — model serialization (.pkl files)
+streamlit       — web dashboard
+plotly          — interactive charts
 ```
 
-> **Note:** Installation may take 2–5 minutes depending on internet speed. LightGBM and SHAP are the largest packages.
-
-**Verify installation:**
+**4. Verify installation:**
 ```bash
 python -c "import lightgbm, shap, streamlit, plotly; print('All packages OK')"
 ```
 
 ---
 
-#### Step 4: Train the Model
+## 10. Running the Project — Full Step-by-Step
 
-> **Skip this step if you already have the `.pkl` model files** (`risk_model.pkl`, `isolation_forest.pkl`, `label_encoders.pkl`, `risk_rate_tables.pkl`). The pre-trained models are included in the project.
+### Step A — Train the Model
 
-If you want to retrain from scratch (e.g., with updated data):
+> **Only needed if you want to retrain from scratch.** Pre-trained artifacts are already included.
 
 ```bash
 python train_model.py
 ```
 
-**What this command does:**
-1. Loads `Historical Data.csv`
-2. Engineers 34 features from raw columns
-3. Trains Isolation Forest for anomaly detection (saved → `isolation_forest.pkl`)
-4. Saves entity risk rate lookup tables (saved → `risk_rate_tables.pkl`)
-5. Runs 5-fold stratified cross-validation with SMOTE + LightGBM
-6. Trains final model on full dataset (saved → `risk_model.pkl`)
-7. Saves label encoders (saved → `label_encoders.pkl`)
-8. Computes SHAP explanations
-9. Saves predictions to `container_risk_predictions.csv`
-
-**Expected output during training:**
+**What it does (console output walkthrough):**
 ```
 ============================================================
 SmartContainer Risk Engine - Training Pipeline
 ============================================================
 
 [1/7] Loading data from 'Historical Data.csv' ...
-      Shape: (XXXXX, 16)
+      Shape: (N, 16)
 
 [2/7] Feature engineering ...
       Computing entity risk rates ...
@@ -740,395 +609,436 @@ SmartContainer Risk Engine - Training Pipeline
 
 [4/7] Stratified 5-Fold Cross-Validation ...
       Fold 1: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
-      Fold 2: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
-      Fold 3: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
-      Fold 4: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
-      Fold 5: Macro F1=X.XXXX  F1_Critical=X.XXXX  Recall_Critical=X.XXXX
+      Fold 2: ...
+      ...
+  -- CV Summary -------------------------------------------
+  Macro F1        : X.XXXX +/- X.XXXX
+  F1_Critical     : X.XXXX +/- X.XXXX
+  Recall_Critical : X.XXXX +/- X.XXXX
 
 [5/7] Training final model on full dataset ...
+  -- Full-Dataset Metrics ---------------------------------
+              precision  recall  f1-score  support
+       Clear    X.XXXX   X.XXXX   X.XXXX    XXXXX
+    Low Risk    X.XXXX   X.XXXX   X.XXXX    XXXXX
+    Critical    X.XXXX   X.XXXX   X.XXXX    XXXXX
 
 [6/7] Computing Risk Scores and SHAP explanations ...
+      Risk Level distribution:
+        Clear       XXXXX
+        Low Risk    XXXXX
+        Critical    XXXXX
 
 [7/7] Saving predictions to 'container_risk_predictions.csv' ...
+      Saved XXXXX rows to 'container_risk_predictions.csv'
 ============================================================
 Training Complete!
+  Model saved   : risk_model.pkl
+  Encoders saved: label_encoders.pkl
+  Predictions   : container_risk_predictions.csv
 ============================================================
 ```
 
-> **Training time:** Approximately 5–15 minutes depending on hardware. SHAP computation on the full dataset takes the most time.
+**⚠️ Training time:** Approximately 10–30 minutes depending on hardware, due to the 5-fold CV + SHAP computation on large datasets.
+
+**Output files generated:**
+- `risk_model.pkl`
+- `isolation_forest.pkl`
+- `label_encoders.pkl`
+- `risk_rate_tables.pkl`
+- `container_risk_predictions.csv`
 
 ---
 
-#### Step 5: Run Predictions on Test Data
+### Step B — Run Inference on Test Data
 
-```bash
-python predict.py --input "Test Data.csv" --output my_test_results.csv
-```
-
-**Command-line options:**
-
-| Option | Default | Description |
-|---|---|---|
-| `--input` | *(required)* | Path to the input shipment CSV file |
-| `--output` | `container_risk_predictions.csv` | Output CSV file path |
-| `--critical-threshold` | `55.0` | Risk score threshold for "Critical" classification |
-| `--low-risk-threshold` | `22.0` | Risk score threshold for "Low Risk" classification |
-| `--no-shap` | False | Skip SHAP computation (much faster, no explanations) |
-
-**For faster inference (no SHAP):**
-```bash
-python predict.py --input "Test Data.csv" --output my_test_results.csv --no-shap
-```
-
-**Evaluation against ground truth** (if `Test Data.csv` contains `Clearance_Status`):
 ```bash
 python predict.py --input "Test Data.csv"
-# The script auto-detects Clearance_Status column and prints metrics
 ```
+
+**Default behavior:**
+- Loads all 4 `.pkl` artifacts from the current directory
+- Applies identical feature engineering to `Test Data.csv`
+- Runs Isolation Forest anomaly scoring
+- Predicts risk score and risk level for each container
+- Computes SHAP explanations (top-3 plain-English reasons)
+- Saves results to `container_risk_predictions.csv`
+- If `Clearance_Status` column exists in input, prints full evaluation metrics
+
+**Output file:** `container_risk_predictions.csv` (or custom path)
 
 ---
 
-#### Step 6: Launch the Dashboard
+### Step C — Launch the Dashboard
 
 ```bash
 streamlit run dashboard.py
 ```
 
-After a few seconds, Streamlit will output:
+**The dashboard will open automatically** in your default browser at:
 ```
-  You can now view your Streamlit app in your browser.
-  Local URL: http://localhost:8501
-  Network URL: http://192.168.x.x:8501
+http://localhost:8501
 ```
 
-Open your web browser and navigate to **http://localhost:8501**
+If it doesn't open automatically, navigate to the URL manually.
 
-The dashboard will automatically load:
-- `Historical Data.csv` for historical context
-- `my_test_results.csv` for pre-computed predictions and evaluation metrics
+**What you'll see:**
+- A dark-themed, professional web interface
+- System Overview KPIs updating to reflect the default predictions (`my_test_results.csv`)
+- Sidebar filters for Risk Level, Origin Country, Destination Port, Trade Regime, and Risk Score range
+- 8+ analytical sections (see Section 13 for full details)
 
 ---
 
-## 11. How to Run — Docker (Recommended)
+## 11. Command-Line Reference (`predict.py`)
 
-Docker provides a completely isolated, reproducible environment with all dependencies pre-installed. No Python setup required on your machine.
-
-### Prerequisites for Docker
-
-1. **Install Docker Desktop:**
-   - Windows/Mac: Download from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
-   - Ubuntu/Linux: `sudo apt-get install docker.io docker-compose`
-
-2. **Verify Docker is running:**
-   ```bash
-   docker --version
-   docker compose version
-   ```
-
-3. **Ensure these files are present** in the project directory (they're mounted as volumes):
-   - `Historical Data.csv`
-   - `Test Data.csv`
-   - `my_test_results.csv`
-   - `container_risk_predictions.csv`
-
----
-
-### Method A: Docker Compose (Easiest)
-
-This is the **recommended** method. One command builds and starts everything.
-
-**First-time run (builds Docker image):**
 ```bash
+python predict.py [OPTIONS]
+```
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--input` | str | **Required** | Path to the input shipment CSV file |
+| `--output` | str | `container_risk_predictions.csv` | Path for the output predictions CSV |
+| `--critical-threshold` | float | `55.0` | Risk score cutoff above which containers are labeled `Critical` |
+| `--low-risk-threshold` | float | `22.0` | Risk score cutoff above which containers are labeled `Low Risk` |
+| `--no-shap` | flag | False | Skip SHAP computation (faster, no explanations) |
+
+### Examples
+
+**Basic prediction:**
+```bash
+python predict.py --input "Test Data.csv"
+```
+
+**Custom output file:**
+```bash
+python predict.py --input "Test Data.csv" --output "my_test_results.csv"
+```
+
+**Adjust thresholds (stricter Critical definition):**
+```bash
+python predict.py --input "Test Data.csv" --critical-threshold 65 --low-risk-threshold 30
+```
+
+**Fast mode (skip SHAP, useful for very large datasets):**
+```bash
+python predict.py --input "Test Data.csv" --no-shap
+```
+
+**Save predictions generated during evaluation to test results file:**
+```bash
+python predict.py --input "Test Data.csv" --output "my_test_results.csv"
+```
+
+---
+
+## 12. Docker Deployment
+
+Docker allows running the entire application in an isolated, reproducible container without any local Python setup.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### Option A: Docker Compose (Recommended)
+
+```bash
+# First run: builds the image and starts the container
 docker compose up --build
-```
 
-**Subsequent runs (starts fast, no rebuild):**
-```bash
+# Subsequent runs (image already built, starts faster)
 docker compose up
-```
 
-**Stop the container:**
-```bash
+# Stop and remove containers
 docker compose down
 ```
 
-**What happens:**
-1. Docker reads `Dockerfile` and builds a `python:3.11-slim` image
-2. Installs all packages from `requirements.txt`
-3. Copies Python scripts and pre-trained `.pkl` model files into the image
-4. Mounts the CSV data files from your local disk as read-only volumes
-5. Exposes port `8501` on your machine
-6. Starts `streamlit run dashboard.py` as the default command
-7. Health check runs every 30s to ensure the service is alive
+Access the dashboard at **http://localhost:8501**
 
-**Access the dashboard:**
-Open your browser and go to **http://localhost:8501**
+### Option B: Manual Docker Commands
 
----
-
-### Method B: Manual Docker Build & Run
-
-Use this if you prefer more control over Docker commands.
-
-**Step 1: Build the image:**
 ```bash
-docker build -t smartcontainer-risk-engine:latest .
-```
+# Build the Docker image
+docker build -t smartcontainer-risk-engine .
 
-**Step 2: Run the container:**
-```bash
+# Run the container
 docker run -p 8501:8501 \
   -v "$(pwd)/Historical Data.csv:/app/Historical Data.csv:ro" \
   -v "$(pwd)/Test Data.csv:/app/Test Data.csv:ro" \
   -v "$(pwd)/my_test_results.csv:/app/my_test_results.csv:ro" \
   -v "$(pwd)/container_risk_predictions.csv:/app/container_risk_predictions.csv:ro" \
-  --name smartcontainer-risk-engine \
-  smartcontainer-risk-engine:latest
+  smartcontainer-risk-engine
 ```
 
-**On Windows (PowerShell), use `${PWD}` instead:**
-```powershell
-docker run -p 8501:8501 `
-  -v "${PWD}/Historical Data.csv:/app/Historical Data.csv:ro" `
-  -v "${PWD}/Test Data.csv:/app/Test Data.csv:ro" `
-  -v "${PWD}/my_test_results.csv:/app/my_test_results.csv:ro" `
-  -v "${PWD}/container_risk_predictions.csv:/app/container_risk_predictions.csv:ro" `
-  --name smartcontainer-risk-engine `
-  smartcontainer-risk-engine:latest
+### What the Dockerfile does (line-by-line explanation):
+
+```dockerfile
+FROM python:3.11-slim          # Use minimal Python 3.11 base image (~100 MB vs ~900 MB for full)
+
+ENV PYTHONDONTWRITEBYTECODE=1  # Don't create .pyc cache files in container
+ENV PYTHONUNBUFFERED=1         # Print logs immediately (no buffering)
+
+WORKDIR /app                   # All subsequent commands run from /app
+
+# Install libgomp1 — required by LightGBM for OpenMP parallelism on Linux
+RUN apt-get update && apt-get install -y libgomp1
+
+COPY requirements.txt .        # Copy requirements first (Docker layer caching optimization)
+RUN pip install -r requirements.txt  # Install Python packages
+
+COPY dashboard.py .            # Copy application source files
+COPY train_model.py .
+COPY predict.py .
+
+# Copy pre-trained model artifacts (baked into image — no training needed to start)
+COPY risk_model.pkl .
+COPY isolation_forest.pkl .
+COPY label_encoders.pkl .
+COPY risk_rate_tables.pkl .
+
+ENV STREAMLIT_SERVER_PORT=8501
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0   # Listen on all interfaces
+ENV STREAMLIT_SERVER_HEADLESS=true     # No browser auto-open in container
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+EXPOSE 8501                    # Document that port 8501 is used
+
+CMD ["streamlit", "run", "dashboard.py"]  # Default startup command
 ```
 
-**Stop and remove the container:**
-```bash
-docker stop smartcontainer-risk-engine
-docker rm smartcontainer-risk-engine
+### Docker Compose Volumes:
+
+The `docker-compose.yml` mounts the CSV data files from your host machine into the container as **read-only** volumes:
+```yaml
+volumes:
+  - ./Historical Data.csv:/app/Historical Data.csv:ro
+  - ./Test Data.csv:/app/Test Data.csv:ro
+  - ./my_test_results.csv:/app/my_test_results.csv:ro
+  - ./container_risk_predictions.csv:/app/container_risk_predictions.csv:ro
 ```
 
-**View container logs:**
-```bash
-docker logs smartcontainer-risk-engine
-# or follow live:
-docker logs -f smartcontainer-risk-engine
-```
+This means you can **update the CSV files on your host** without rebuilding the Docker image, and the dashboard will reflect the changes on next load.
+
+**Health check:** Docker Compose also configures a health check that pings `http://localhost:8501/_stcore/health` every 30 seconds to verify the container is alive.
 
 ---
 
-### Docker Environment Variables
+## 13. Dashboard — All Sections Explained
 
-The following environment variables are pre-configured in both `Dockerfile` and `docker-compose.yml`:
+The dashboard (`dashboard.py`) is a 1462-line Streamlit application with a GitHub-dark themed UI. Here are all its sections:
 
-| Variable | Value | Purpose |
-|---|---|---|
-| `STREAMLIT_SERVER_PORT` | `8501` | Port Streamlit listens on |
-| `STREAMLIT_SERVER_ADDRESS` | `0.0.0.0` | Bind to all network interfaces |
-| `STREAMLIT_SERVER_HEADLESS` | `true` | Disable browser auto-open |
-| `STREAMLIT_BROWSER_GATHER_USAGE_STATS` | `false` | Opt out of telemetry |
-| `PYTHONDONTWRITEBYTECODE` | `1` | No `.pyc` files |
-| `PYTHONUNBUFFERED` | `1` | Real-time log output |
+### Upload & Predict (Top of Page)
+- Drag-and-drop file uploader for any shipment CSV
+- **"Run Predictions" button** — triggers the full ML pipeline (feature engineering + Isolation Forest + LightGBM + SHAP) on the uploaded file in-browser
+- Results refresh all charts automatically
+- Download button to save scored results as CSV
 
----
+**Note:** Live prediction via the dashboard can take ~2–4 minutes for large files due to SHAP computation. Use `--no-shap` in `predict.py` CLI for faster batch inference.
 
-## 12. Command-Line Inference (predict.py)
+### Section 1 — System Overview (KPI Cards)
+Six color-coded KPI cards:
+- 🔵 Total Containers (blue)
+- 🔴 Critical Risk count (red)
+- 🟡 Low Risk count (amber)
+- 🟢 Clear count (green)
+- 🟣 Average Risk Score (purple)
+- 🟦 Average Dwell Time in hours (teal)
 
-`predict.py` is a standalone inference script that can score any shipment CSV file using the saved model artifacts.
+Secondary metrics row: Weight Anomalies (>5% mismatch), Critical Rate %, Max Risk Score, Containers with Zero Value.
 
-### Full Usage
+All values **update dynamically** when sidebar filters are changed.
 
-```bash
-python predict.py --input "path/to/shipment_data.csv" \
-                  --output "path/to/output_predictions.csv" \
-                  --critical-threshold 55 \
-                  --low-risk-threshold 22
-```
+### Section 2 — Risk Distribution
+- **Donut chart:** Proportion of Critical / Low Risk / Clear containers
+- **Overlaid histogram:** Distribution of risk scores (0–100) colored by risk level, with vertical dashed lines at the Critical threshold (55) and Low Risk threshold (22)
 
-### Quick Examples
+### Section 3 — Trade Flow Analysis
+- **Top 15 Origin Countries:** Horizontal bar chart showing which countries ship the most containers
+- **Top 15 Destination Ports:** Horizontal bar chart of arrival port frequency
 
-```bash
-# Basic usage with defaults
-python predict.py --input "Test Data.csv"
+### Section 4 — Anomaly Detection
+- **Weight mismatch scatter plot:** Declared Weight vs. Measured Weight, colored by Risk Level — outliers visually apparent
+- **Dwell Time box plot:** Distribution of port dwell times per risk level
 
-# Custom output file
-python predict.py --input "Test Data.csv" --output my_predictions.csv
+### Section 5 — Risk Score Analysis (Time Series & Trends)
+- **Risk score over time:** Line/area chart of average risk score by date
+- **Monthly risk trend:** Bar chart aggregated by month
 
-# Fast inference without SHAP (no explanations, much faster)
-python predict.py --input "Test Data.csv" --output fast_results.csv --no-shap
+### Section 6 — Shipping & Entity Analysis
+- **Top importers by average risk score:** Identifies the most consistently high-risk importers
+- **Shipping line risk comparison:** Average risk score per carrier
 
-# Custom risk thresholds (be more aggressive in flagging Critical)
-python predict.py --input "Test Data.csv" --critical-threshold 45 --low-risk-threshold 18
-```
+### Section 7 — Model Evaluation Metrics
+Dynamically computed from `Test Data.csv` and `my_test_results.csv`:
+- **Classification Report:** Precision, Recall, F1-Score for each class (Clear, Low Risk, Critical) + Macro Avg + Weighted Avg
+- **Confusion Matrix heatmap:** Interactive Plotly heatmap showing actual vs. predicted classifications
+- **Summary metric boxes:** Macro F1, Critical F1, Critical Recall, Weighted F1
 
-### What `predict.py` Does Internally
+### Section 8 — SHAP Feature Importance
+- **Global bar chart:** Mean absolute SHAP values across all samples — shows which features matter most overall
+- **Explanation display:** For individual containers, shows the top-3 plain-English reasons for their risk classification
 
-1. **Validates** that all 4 required `.pkl` files exist
-2. **Loads** the model, encoders, isolation forest, and risk rate tables
-3. **Loads and cleans** the input CSV (normalizes column names)
-4. **Engineers features** — same 34 features as training (using saved lookup tables)
-5. **Applies Isolation Forest** — computes `anomaly_score` and `is_anomaly`
-6. **Runs LightGBM** — gets class probabilities for all 3 classes
-7. **Computes band-anchored risk scores** and assigns risk levels
-8. **Runs SHAP TreeExplainer** and generates plain-English explanations
-9. **Prints evaluation metrics** if `Clearance_Status` column is present in input
-10. **Saves output CSV** with Container_ID, Risk_Score, Risk_Level, Explanation_Summary
-
----
-
-## 13. Model Artifacts Explained
-
-| File | Size | Contents | Required By |
-|---|---|---|---|
-| `risk_model.pkl` | ~10 MB | Trained `LGBMClassifier` object | `predict.py`, `dashboard.py` |
-| `isolation_forest.pkl` | ~3.5 MB | Trained `IsolationForest` object | `predict.py`, `dashboard.py` |
-| `label_encoders.pkl` | ~278 KB | Dict of `LabelEncoder` per categorical column | `predict.py`, `dashboard.py` |
-| `risk_rate_tables.pkl` | ~568 KB | Dict of entity → historical risk rate mappings | `predict.py`, `dashboard.py` |
-
-> All 4 files must be present in the same directory as the scripts. They are generated by `train_model.py` and are pre-included in this submission.
+### Sidebar Filters (Apply Globally to All Charts)
+- **Risk Level** multi-select (Critical, Low Risk, Clear)
+- **Origin Country** multi-select (with "All" option)
+- **Destination Port** multi-select (with "All" option)
+- **Trade Regime** multi-select (with "All" option)
+- **Risk Score Range** slider (0–100)
 
 ---
 
-## 14. Evaluation Metrics
+## 14. Model Evaluation Metrics
 
-The system evaluates model performance using the following metrics (computed when `Clearance_Status` is available):
+The model is evaluated using several metrics, with Macro F1 as the primary metric (since the task involves imbalanced multi-class classification where all classes matter):
 
-| Metric | Why It Matters |
-|---|---|
-| **Macro F1-Score** | Primary metric: equal weight to all 3 classes regardless of size |
-| **Critical F1-Score** | Most important: ability to correctly identify high-risk shipments |
-| **Critical Recall** | Fraction of actual Critical cases that are caught (missing one is costly) |
-| **Weighted F1-Score** | F1 weighted by class support |
-| **Accuracy** | Overall correct classification rate |
-| **Confusion Matrix** | Per-class breakdown: True Positives, False Positives, False Negatives |
+| Metric | Description | Target |
+|--------|-------------|--------|
+| **Macro F1** | Average F1 across Clear, Low Risk, and Critical — treats all classes equally | Primary |
+| **F1 Critical** | F1 score specifically for the Critical class | Secondary |
+| **Recall Critical** | What fraction of actual Critical containers did we catch? (sensitivity) | Secondary |
+| **Weighted F1** | F1 weighted by class frequency | Informational |
+| **Accuracy** | Overall correct prediction rate | Informational |
 
-### Where to See Metrics
+**Why Macro F1 over accuracy?**
+Accuracy is misleading on imbalanced datasets. If 90% of containers are `Clear`, a model that always predicts `Clear` achieves 90% accuracy but misses all Critical containers. Macro F1 forces the model to perform well on all three classes.
 
-1. **Terminal:** After running `python predict.py --input "Test Data.csv"` (if `Clearance_Status` is present)
-2. **Dashboard:** Scroll to the "📋 Model Evaluation Metrics" section
-
----
-
-## 15. Dashboard Usage Guide
-
-### Uploading New Data for Prediction
-
-1. On the dashboard main page, find the **"📤 Upload Shipment Data & Run Predictions"** section
-2. Click **"Choose a shipment CSV"** and select your file
-3. Click **"🔍 Run Predictions"**
-4. Wait ~60–240 seconds for feature engineering + SHAP to complete
-5. All charts on the page will automatically refresh with predictions from your uploaded file
-6. Click **"⬇️ Download Results CSV"** to save the predictions
-
-> The uploaded CSV must have the **same column schema** as `Test Data.csv` / `Historical Data.csv`.
-
-### Using Sidebar Filters
-
-The sidebar filters apply **globally** to all charts simultaneously:
-
-- **Risk Level:** Select which risk levels to include (e.g., only show Critical containers)
-- **Origin Country:** Filter to specific country/countries of origin
-- **Destination Port:** Filter to specific destination ports
-- **Trade Regime:** Filter by Import / Export / Transit
-- **Risk Score Range:** Slider to narrow by risk score value (e.g., 80–100 for top critical)
-
-### Resetting to Default View
-
-Simply reload the page (`F5`) to reset all filters and return to the default view using pre-computed `my_test_results.csv` predictions.
+**Why high Recall for Critical?**
+A missed Critical container (false negative) is far more costly than a false alarm (false positive). High recall ensures we catch the dangerous containers, even if it means some extra false positives.
 
 ---
 
-## 16. Troubleshooting
+## 15. Feature Importance & Explainability
 
-### ❌ `FileNotFoundError: Required file not found: risk_model.pkl`
-**Cause:** Model artifacts are missing.
-**Fix:** Either run `python train_model.py` or ensure the `.pkl` files are in the same directory as your scripts.
+The top features by mean absolute SHAP value (approximate ranking):
 
-### ❌ `FileNotFoundError: [Errno 2] No such file or directory: 'Historical Data.csv'`
-**Cause:** CSV data files are not in the project directory.
-**Fix:** Ensure `Historical Data.csv`, `Test Data.csv`, `my_test_results.csv`, and `container_risk_predictions.csv` are in the same folder as the Python scripts.
+| Rank | Feature | What It Captures |
+|------|---------|-----------------|
+| 1 | `entity_risk_combined` | Historical risk profile of all parties (importer, exporter, route) |
+| 2 | `importer_risk_rate` | Historical Critical rate for this specific importer |
+| 3 | `anomaly_score` | How unusual this shipment is compared to normal traffic |
+| 4 | `weight_diff_pct` | Percentage weight discrepancy between declared and measured |
+| 5 | `country_risk_rate` | Historical risk profile of the origin country |
+| 6 | `value_per_kg` | Value-to-weight ratio (catches goods mis-classification) |
+| 7 | `log_dwell_time` | How long the container sat at port |
+| 8 | `is_transit` | Whether it's a transit shipment |
+| 9 | `hs_chapter` | HS code chapter (type of goods) |
+| 10 | `weight_mismatch_severe` | Binary flag for >15% weight discrepancy |
+
+---
+
+## 16. Key Design Decisions
+
+### Why LightGBM over other models?
+LightGBM consistently outperforms alternatives on tabular data with tens of features and hundreds of thousands of samples. It handles class imbalance natively (`class_weight="balanced"`), supports early stopping out of the box, and is orders of magnitude faster than neural networks or XGBoost on this data size.
+
+### Why SMOTE inside cross-validation folds?
+Applying SMOTE before cross-validation would cause data leakage — synthetic samples generated from the full dataset would "remember" information from what should be unseen validation data. By applying SMOTE only to the training split of each fold, we get unbiased validation metrics.
+
+### Why smoothed (Bayesian) entity risk rates instead of raw rates?
+Raw rates are unstable for entities with few historical records. An importer with only 1 shipment that was Critical would get a rate of 100% — clearly unreliable. Bayesian smoothing pulls rare entities toward the global mean, making the features robust.
+
+### Why `contamination=0.05` for Isolation Forest?
+The 5% contamination rate reflects a reasonable expectation for real-world customs data — roughly 5% of shipments are genuinely anomalous. Increasing this threshold would flag more containers as anomalies but increase false positives.
+
+### Why only positive SHAP values in explanations?
+If we included negative SHAP values ("this container is NOT Critical because X"), the explanation would be confusing — why mention why it's not Critical if we're saying it IS Critical? Keeping only positive-SHAP features ensures every reason in the explanation supports the predicted risk level.
+
+### Why log-transform numerical features?
+Shipment weights and values follow highly right-skewed distributions (a few very large values, many small ones). Log-transforming (`log1p`) creates a more symmetric distribution that is easier for tree-based models to split on. It also stabilizes variance across the full range of values.
+
+---
+
+## 17. Troubleshooting
+
+### ❌ `FileNotFoundError: risk_model.pkl not found`
+**Cause:** You haven't trained the model yet, or the `.pkl` files are missing from the directory.
+**Fix:** Run `python train_model.py` first. The pre-trained `.pkl` files should already be in the project directory.
+
+---
 
 ### ❌ `ModuleNotFoundError: No module named 'lightgbm'`
-**Cause:** Dependencies not installed or virtual environment not activated.
+**Cause:** Python packages are not installed.
 **Fix:**
 ```bash
-# Activate virtual environment first:
-venv\Scripts\activate       # Windows
-source venv/bin/activate    # Mac/Linux
-# Then install:
 pip install -r requirements.txt
 ```
 
-### ❌ Dashboard shows blank/empty charts
-**Cause:** `my_test_results.csv` might be empty or malformed.
-**Fix:** Regenerate it:
+---
+
+### ❌ `Streamlit: command not found` (Linux/Mac)
+**Cause:** Streamlit was installed in a virtual environment that isn't activated, or installed with a different Python version.
+**Fix:**
 ```bash
-python predict.py --input "Test Data.csv" --output my_test_results.csv --no-shap
+python -m streamlit run dashboard.py
 ```
 
-### ❌ Docker: `Cannot connect to the Docker daemon`
-**Cause:** Docker Desktop is not running.
-**Fix:** Start Docker Desktop from your system tray or applications folder, wait for it to fully start (the Docker icon should stop animating), then retry.
+---
 
-### ❌ Docker: Port 8501 already in use
-**Cause:** Another Streamlit instance or application is using port 8501.
-**Fix:** Either stop the other application, or map to a different port:
+### ❌ Dashboard shows error: `my_test_results.csv not found`
+**Cause:** The predictions file hasn't been generated yet.
+**Fix:**
 ```bash
-docker run -p 8502:8501 ... # map host port 8502 to container port 8501
-# then access http://localhost:8502
+python predict.py --input "Test Data.csv" --output my_test_results.csv
 ```
 
-### ❌ `SHAP computation hanging or very slow`
-**Cause:** SHAP TreeExplainer on large datasets is CPU-intensive.
-**Fix 1:** Use `--no-shap` flag when running `predict.py`:
+---
+
+### ❌ Training runs out of memory
+**Cause:** `Historical Data.csv` is very large and SMOTE creates synthetic samples, significantly expanding memory usage.
+**Fix:** Reduce `n_estimators` in `lgb_params` from 1200 to 600, or increase system RAM.
+
+---
+
+### ❌ Docker: `port 8501 already in use`
+**Cause:** Another process is using port 8501.
+**Fix:** Either kill the existing process, or change the port mapping in `docker-compose.yml`:
+```yaml
+ports:
+  - "8502:8501"   # Maps host port 8502 to container port 8501
+```
+Then access the dashboard at `http://localhost:8502`.
+
+---
+
+### ❌ SHAP computation takes too long
+**Cause:** SHAP TreeExplainer needs to compute values for all samples × all features × all 3 classes.
+**Fix for predict.py:** Use `--no-shap` flag:
 ```bash
 python predict.py --input "Test Data.csv" --no-shap
 ```
-**Fix 2:** For the dashboard upload prediction, be patient — it can take 2–4 minutes on a large CSV.
-
-### ❌ Training very slow on Windows
-**Cause:** LightGBM's multiprocessing can be slow on Windows for certain configurations.
-**Fix:** The training uses `n_jobs=-1` (all cores), which is optimal. Ensure no other heavy processes are running. Using WSL2 (Windows Subsystem for Linux) can speed up training significantly.
+**Fix for dashboard live prediction:** This is inherent to full SHAP computation. For very large batches (>50K rows), consider running `predict.py` via CLI and uploading the output CSV to the dashboard instead.
 
 ---
 
-## 17. Key Design Decisions & Important Notes
-
-### 1. Why LightGBM over XGBoost or Random Forest?
-LightGBM is optimized for tabular data with categorical features. It trains faster, uses less memory, and typically achieves better accuracy than alternatives on structured data. Its native handling of class imbalance (`class_weight="balanced"`) also makes it well-suited for this task.
-
-### 2. Why SMOTE instead of just `class_weight`?
-Using both SMOTE (oversampling) and `class_weight="balanced"` provides double correction for class imbalance. SMOTE generates synthetic samples that teach the model the shape of minority class decision boundaries, while `class_weight` increases the penalty for misclassifying minority class examples.
-
-### 3. Why Smoothed Entity Risk Rates vs. Raw Rates?
-With Bayesian smoothing (`smooth=10`), new or rare entities (e.g., an importer with only 1 shipment) get pulled toward the global average rate rather than being assigned an extreme rate. This prevents the model from over-relying on sparse historical data.
-
-### 4. Why Band-Anchored Scoring vs. Raw Probabilities?
-Raw model probabilities don't map naturally to a 0–100 scale in a meaningful way. The band-anchored approach guarantees:
-- A "Clear" container always scores between 2–20
-- A "Low Risk" container always scores between 23–53  
-- A "Critical" container always scores between 56–98
-- Within each band, more severe cases score higher
-
-### 5. Only Positive SHAP for Explanations
-Including negative SHAP values (features that *argued against* a risk level) would confuse operators. E.g., explaining a Critical container with "the declared value is low" contradicts the risk level. By using only positive-SHAP features, every explanation clearly states **why** the container received that specific risk level.
-
-### 6. CSV Files as Docker Volumes
-Rather than baking CSV data files into the Docker image, they are mounted as read-only volumes. This means:
-- You can update/swap CSVs without rebuilding the image
-- The Docker image stays lean (only code and model files are embedded)
-- Sensitive data doesn't get committed to a container registry
-
-### 7. Dashboard Uses `my_test_results.csv` by Default
-The dashboard loads `my_test_results.csv` (predictions on `Test Data.csv`) at startup. When you upload a new CSV and click "Run Predictions", the dashboard temporarily switches to showing results for the uploaded file (stored in Streamlit's session state). Refreshing the page reverts to the default view.
+### ❌ Unknown categories in test data (new importers, countries, etc.)
+**Cause:** The test data contains an importer/country/port that wasn't in the training data.
+**Fix:** This is handled automatically. Unseen categories are assigned:
+- `LabelEncoder`: category encoded as `-1`
+- Entity risk rates: global average critical rate (~1%) as fallback
+This graceful degradation ensures inference always completes successfully.
 
 ---
 
-## 📜 License
+## 18. Output File Format
 
-This project was developed for **HackaMined 2026 — Track 8 INTECH** academic competition. All rights reserved by the team.
+### `container_risk_predictions.csv` and `my_test_results.csv`
+
+Both output files have the same 4-column format:
+
+```csv
+Container_ID,Risk_Score,Risk_Level,Explanation_Summary
+CTR-000001,82.45,Critical,"This importer has a history of flagged or seized shipments; Severe weight discrepancy — more than 15% difference detected; Shipment is in transit regime, which carries inherently higher risk"
+CTR-000002,15.23,Clear,"This importer has a clean compliance record; Declared and measured weights are closely aligned; Origin country has a low customs risk profile"
+CTR-000003,41.67,Low Risk,"Declared value appears suspiciously low; This is a low-risk trade route; Declaration was submitted at an unusual hour"
+```
+
+| Column | Type | Range/Values | Description |
+|--------|------|-------------|-------------|
+| `Container_ID` | String | — | Original container identifier from input data |
+| `Risk_Score` | Float | 0.00 – 100.00 | Continuous risk score; higher = more dangerous |
+| `Risk_Level` | String | `Critical`, `Low Risk`, `Clear` | Categorical risk classification |
+| `Explanation_Summary` | String | — | Semicolon-separated plain-English reasons (top 3 SHAP features) |
 
 ---
 
-## 👥 Team
-
-**HackaMined 2026 — Track 8 INTECH**
-
----
-
-*README last updated: March 2026*
+*SmartContainer Risk Engine — HackaMined 2026 · Track 8 INTECH*
