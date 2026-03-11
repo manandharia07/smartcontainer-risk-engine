@@ -751,7 +751,7 @@ If it doesn't open automatically, navigate to the URL manually.
 - A dark-themed, professional web interface
 - System Overview KPIs updating to reflect the default predictions (`my_test_results.csv`)
 - Sidebar filters for Risk Level, Origin Country, Destination Port, Trade Regime, and Risk Score range
-- 8+ analytical sections (see Section 13 for full details)
+- 8+ analytical sections (refer section 13)
 
 ---
 ## 11. Docker Deployment
